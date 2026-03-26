@@ -21,6 +21,15 @@ from autotest.apis.coverage import coverage_report, repository_manager
 from autotest.apis.websocket import websocket
 from autotest.apis.websocket.ui import web_ui_case
 from autotest.apis.job import task_record
+from autotest.apis.pc_autotest import (
+    pc_devices_controller,
+    pc_testcase_controller,
+    pc_report_controller,
+    pc_plan_controller,
+    pc_plan_report_controller,
+    pc_picture_controller,
+    pc_file_manager_controller,
+)
 
 app_router = APIRouter()
 
@@ -61,3 +70,12 @@ app_router.include_router(task_record.router, prefix="/job", tags=["job"])
 # websocket
 app_router.include_router(websocket.router, prefix="/ws", tags=["websocket"])
 app_router.include_router(web_ui_case.router, prefix="/ws/uiCase", tags=["UIWebsocket"])
+
+# PC 自动化
+app_router.include_router(pc_devices_controller.router, prefix="/pc/devices", tags=["PCDevices"])
+app_router.include_router(pc_testcase_controller.router, prefix="/pc/testcase", tags=["PCTestcase"])
+app_router.include_router(pc_report_controller.router, prefix="/pc/report", tags=["PCReport"])
+app_router.include_router(pc_plan_controller.router, prefix="/pc/plan", tags=["PCPlan"])
+app_router.include_router(pc_plan_report_controller.router, prefix="/pc/planReport", tags=["PCPlanReport"])
+app_router.include_router(pc_picture_controller.router, prefix="/pc/picture", tags=["PCPicture"])
+app_router.include_router(pc_file_manager_controller.router, prefix="/pc/fm", tags=["PCFileManager"])

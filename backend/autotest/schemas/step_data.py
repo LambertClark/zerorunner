@@ -7,7 +7,12 @@ from pydantic import BaseModel, Field, root_validator
 
 from autotest.schemas.base import BaseSchema
 from zerorunner.models.step_model import TStep, ValidatorData, TSqlRequest, TRequest, TIFRequest, TWaitRequest, \
-    TScriptRequest, TLoopRequest, TUiRequest
+    TScriptRequest, TLoopRequest, TUiRequest, \
+    TPcMouseLeftClickRequest, TPcMouseRightClickRequest, TPcMouseDoubleClickRequest, TPcMouseHoverRequest, \
+    TPcMouseDragRequest, TPcMouseScrollDownRequest, TPcMouseScrollUpRequest, TPcKeyboardInputRequest, \
+    TPcKeyboardClearRequest, TPcKeyboardSelectAllRequest, TPcKeyboardEnterRequest, TPcKeyboardCombinationKeyRequest, \
+    TPcFlowWaitRequest, TPcFlowWaitElementRequest, TPcFlowCaseTemplateRequest, \
+    TPcPipSwitchClickRequest, TPcPipTimelineDragRequest, TPcPipSliderDragRequest
 
 
 class RequestMode(str, Enum):
@@ -79,7 +84,15 @@ class TStepSqlData(BaseModel):
     variable_name: str = Field(None, description="赋值的变量名称")
 
 
-TStepRequest = typing.Union[TRequestData, TSqlData, TIFRequest, TWaitRequest, TScriptRequest, TLoopRequest, TUiRequest]
+TStepRequest = typing.Union[
+    TRequestData, TSqlData, TIFRequest, TWaitRequest, TScriptRequest, TLoopRequest, TUiRequest,
+    # PC 自动化类型
+    TPcMouseLeftClickRequest, TPcMouseRightClickRequest, TPcMouseDoubleClickRequest, TPcMouseHoverRequest,
+    TPcMouseDragRequest, TPcMouseScrollDownRequest, TPcMouseScrollUpRequest, TPcKeyboardInputRequest,
+    TPcKeyboardClearRequest, TPcKeyboardSelectAllRequest, TPcKeyboardEnterRequest, TPcKeyboardCombinationKeyRequest,
+    TPcFlowWaitRequest, TPcFlowWaitElementRequest, TPcFlowCaseTemplateRequest,
+    TPcPipSwitchClickRequest, TPcPipTimelineDragRequest, TPcPipSliderDragRequest,
+]
 
 
 class TStepData(TStep):

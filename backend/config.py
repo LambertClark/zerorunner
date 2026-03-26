@@ -81,6 +81,7 @@ class Configs(BaseSettings):
         'celery_worker.tasks.common',
         'celery_worker.tasks.task_run',
         'celery_worker.tasks.ui_case',
+        'celery_worker.tasks.pc_picture',
     ]
     # task_queues = (
     #     Queue('default', routing_key='default'),
@@ -92,6 +93,10 @@ class Configs(BaseSettings):
 
     TEST_FILES_DIR: str = Path(__file__).parent.joinpath("static", "files").as_posix()
     PROJECT_ROOT_DIR: str = Path(__file__).parent.as_posix()
+
+    # PC 自动化图片存储
+    UPLOAD_DIR: str = Path(__file__).parent.joinpath("static", "pc_images").as_posix()
+    FILE_BASE_URL: str = Field("http://127.0.0.1:8100", env="FILE_BASE_URL")
 
     task_run_pool: int = 3
 
