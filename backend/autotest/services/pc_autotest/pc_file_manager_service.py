@@ -1,107 +1,100 @@
 # -*- coding: utf-8 -*-
-"""
-PC 图片文件管理服务
-- 支持 UploadFile 上传
-- 支持 base64 图片保存
-- 返回可访问的下载 URL
-- 使用 config.UPLOAD_DIR 和 config.FILE_BASE_URL
-"""
 import base64
-import os
 import uuid
-import typing
 from pathlib import Path
 
 import aiofiles
-from fastapi import UploadFile
-from loguru import logger
+from fastapi import UploadFile, HTTPException
 
 from config import config
 
-# 允许上传的图片扩展名
-_ALLOWED_EXTS = {"png", "jpg", "jpeg", "bmp", "gif", "webp"}
+_ALLOWED_MIME_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
+_MAX_SIZE = 5 * 1024 * 1024
+
+_MIME_TO_EXT = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+}
 
 
-def _check_image_ext(ext: str):
-    if ext.lower() not in _ALLOWED_EXTS:
-        raise ValueError(f"不支持的图片格式: .{ext}，允许格式: {_ALLOWED_EXTS}")
+def validate_image(file: UploadFile):
+    """验证图片类型（仅允许 image/jpeg, image/png, image/webp）"""
+    if file.content_type not in _ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f'不支持的图片类型: {file.content_type}，仅允许: {sorted(_ALLOWED_MIME_TYPES)}',
+        )
 
 
-def _get_upload_dir() -> str:
-    upload_dir = getattr(config, "UPLOAD_DIR", None) or config.TEST_FILES_DIR
-    os.makedirs(upload_dir, exist_ok=True)
-    return upload_dir
+def generate_unique_filename(original_name: str) -> str:
+    """生成唯一文件名"""
+    parts = original_name.rsplit('.', 1)
+    ext = parts[-1] if len(parts) > 1 else 'png'
+    return f'{uuid.uuid4().hex.upper()}.{ext}'
 
 
-def _build_url(filename: str) -> str:
-    """拼接可访问的图片 URL"""
-    base_url = getattr(config, "FILE_BASE_URL", config.BASE_URL).rstrip("/")
-    return f"{base_url}/pc/fm/download/{filename}"
+def _parse_image_suffix(header: str) -> str:
+    """从 base64 header 解析后缀，e.g. data:image/png;base64 → png"""
+    try:
+        mime = header.split(';')[0].split(':')[1].strip()
+        return _MIME_TO_EXT.get(mime, 'png')
+    except (IndexError, AttributeError):
+        return 'png'
 
 
 class PcFileManagerService:
     """PC图片文件管理服务"""
 
-    @staticmethod
-    async def upload_image(file: UploadFile) -> typing.Dict[str, str]:
-        """上传图片文件"""
-        if not file:
-            raise FileNotFoundError("请选择上传文件")
-        ext_parts = (file.filename or "").split(".")
-        ext = ext_parts[-1] if len(ext_parts) > 1 else ""
-        _check_image_ext(ext)
+    def __init__(
+        self,
+        upload_dir: str = config.UPLOAD_DIR,
+        base_url: str = config.FILE_BASE_URL,
+    ):
+        self.upload_dir = Path(upload_dir)
+        self.base_url = base_url.rstrip('/')
+        self._init_upload_dir()
 
-        file_name = f"{uuid.uuid4().hex.upper()}.{ext}"
-        upload_dir = _get_upload_dir()
-        abs_path = Path(upload_dir).joinpath(file_name).as_posix()
+    def _init_upload_dir(self):
+        self.upload_dir.mkdir(parents=True, exist_ok=True)
 
-        contents = await file.read()
-        async with aiofiles.open(abs_path, "wb") as f:
-            await f.write(contents)
+    async def save_upload_file(self, file: UploadFile) -> dict:
+        validate_image(file)
+        filename = generate_unique_filename(file.filename or 'image.png')
+        save_path = self.upload_dir / filename
+        content_buf = b''
+        async with aiofiles.open(save_path, 'wb') as f:
+            while True:
+                chunk = await file.read(64 * 1024)
+                if not chunk:
+                    break
+                await f.write(chunk)
+                content_buf += chunk
+        if len(content_buf) > _MAX_SIZE:
+            save_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=400, detail=f'文件大小超过限制 {_MAX_SIZE} bytes')
+        return self._build_response_data(filename, save_path)
 
-        logger.info(f"PC图片上传: {abs_path}")
+    async def save_base64_image(self, base64_data: str) -> dict:
+        try:
+            if ',' in base64_data:
+                header, encoded = base64_data.split(',', 1)
+                ext = _parse_image_suffix(header)
+            else:
+                encoded = base64_data
+                ext = 'png'
+            image_bytes = base64.b64decode(encoded)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f'Base64 解码失败: {str(e)}')
+        filename = f'{uuid.uuid4().hex.upper()}.{ext}'
+        save_path = self.upload_dir / filename
+        async with aiofiles.open(save_path, 'wb') as f:
+            await f.write(image_bytes)
+        return self._build_response_data(filename, save_path)
+
+    def _build_response_data(self, filename: str, save_path: Path) -> dict:
         return {
-            "filename": file_name,
-            "url": _build_url(file_name),
-            "original_name": file.filename,
-            "size": len(contents),
+            'filename': filename,
+            'path': f'{self.base_url}/api/pc/fm/download/{filename}',
+            'size': save_path.stat().st_size,
         }
-
-    @staticmethod
-    async def save_base64_image(
-        base64_content: str,
-        filename: str = "image.png",
-    ) -> typing.Dict[str, str]:
-        """保存 base64 编码图片"""
-        if not base64_content:
-            raise ValueError("base64内容不能为空")
-
-        # 去掉 data URI 前缀（如 data:image/png;base64,）
-        if "," in base64_content:
-            base64_content = base64_content.split(",", 1)[1]
-
-        ext_parts = filename.split(".")
-        ext = ext_parts[-1] if len(ext_parts) > 1 else "png"
-        _check_image_ext(ext)
-
-        file_name = f"{uuid.uuid4().hex.upper()}.{ext}"
-        upload_dir = _get_upload_dir()
-        abs_path = Path(upload_dir).joinpath(file_name).as_posix()
-
-        contents = base64.b64decode(base64_content)
-        async with aiofiles.open(abs_path, "wb") as f:
-            await f.write(contents)
-
-        logger.info(f"PC图片(base64)保存: {abs_path}")
-        return {
-            "filename": file_name,
-            "url": _build_url(file_name),
-            "original_name": filename,
-            "size": len(contents),
-        }
-
-    @staticmethod
-    def get_abs_path(filename: str) -> str:
-        """根据文件名返回绝对路径（用于下载接口）"""
-        upload_dir = _get_upload_dir()
-        return Path(upload_dir).joinpath(filename).as_posix()

@@ -95,8 +95,8 @@ class Configs(BaseSettings):
     PROJECT_ROOT_DIR: str = Path(__file__).parent.as_posix()
 
     # PC 自动化图片存储
-    UPLOAD_DIR: str = Path(__file__).parent.joinpath("static", "pc_images").as_posix()
-    FILE_BASE_URL: str = Field("http://127.0.0.1:8100", env="FILE_BASE_URL")
+    FILE_BASE_URL: str = Field(..., env="FILE_BASE_URL")
+    UPLOAD_DIR: str = Field(..., env="UPLOAD_DIR")
 
     task_run_pool: int = 3
 

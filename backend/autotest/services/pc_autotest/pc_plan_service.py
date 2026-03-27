@@ -3,91 +3,81 @@ import typing
 
 from autotest.exceptions.exceptions import ParameterError
 from autotest.models.pc_plan_models import PcPlan
-from autotest.schemas.pc_autotest.pc_plan import PcPlanQuery, PcPlanIn, PcPlanId, PcPlanRunIn
+from autotest.schemas.pc_autotest.pc_plan import PcPlanQuery, PcPlanIn, PcPlanId, PcPlanRun
 
 
 class PcPlanService:
     """PC测试计划服务"""
 
     @staticmethod
+    async def save_or_update(params: PcPlanIn):
+        print(params)
+        return await PcPlan.create_or_update(params.dict())
+
+    @staticmethod
     async def list(params: PcPlanQuery):
         return await PcPlan.get_list(params)
 
     @staticmethod
-    async def get_by_id(params: PcPlanId) -> dict:
-        plan = await PcPlan.get(params.id, to_dict=True)
-        if not plan:
-            raise ParameterError("测试计划不存在")
-        return plan
+    async def detail(params: PcPlanQuery):
+        return await PcPlan.get_plan_by_id(params.id)
 
     @staticmethod
-    async def save_or_update(params: PcPlanIn) -> dict:
-        data = params.dict()
-        return await PcPlan.create_or_update(data)
-
-    @staticmethod
-    async def deleted(id: int):
-        plan = await PcPlan.get(id)
-        if not plan:
-            raise ParameterError("测试计划不存在")
+    async def delete(id: int):
         return await PcPlan.delete(id)
 
     @staticmethod
-    async def run(params: PcPlanRunIn) -> dict:
-        """
-        执行测试计划：
-        - 查询计划，获取 case_ids
-        - 逐一调用 pc_testcase_service.run
-        - 创建计划报告主表
-        """
-        from autotest.models.pc_plan_report_models import PcPlanReport, PcPlanReportDetail
-        from autotest.schemas.pc_autotest.pc_case import PcTestcaseRunIn
-        from autotest.services.pc_autotest.pc_testcase_service import PcTestcaseService
-        from autotest.utils.current_user import current_user
+    async def copy(params: PcPlanQuery):
+        source_plan_info = await PcPlan.get(params.id, to_dict=True)
+        if not source_plan_info:
+            raise ParameterError('计划不存在!')
+        source_plan_info.pop('id', None)
+        plan_info = PcPlanQuery.parse_obj(source_plan_info)
+        title = f'copy_{plan_info.title}'
+        copy_dict = source_plan_info.copy()
+        copy_dict['title'] = title
+        return await PcPlan.create_or_update(copy_dict)
 
-        plan = await PcPlan.get(params.id)
+    @staticmethod
+    async def get_all():
+        return await PcPlan.get_all()
+
+    @staticmethod
+    async def get_plan_info(params: PcPlanId):
+        plan = await PcPlan.get(params.id, to_dict=True)
         if not plan:
-            raise ParameterError("测试计划不存在")
+            raise ValueError('不存在当前计划！')
+        return plan
 
-        case_ids: typing.List[int] = plan.case_ids or []
-        if not case_ids:
-            raise ParameterError("测试计划中无关联用例")
+    @staticmethod
+    async def run_plan(params: PcPlanRun):
+        from autotest.schemas.pc_autotest.pc_case import PcRunCaseRequest
+        from autotest.services.pc_autotest.pc_testcase_service import PcTestcaseService
+        from autotest.utils.common import get_time
 
-        identity = params.pc_device_identity or plan.pc_device_identity
-        current_user_info = await current_user()
-        executor_id = current_user_info.get("id") if current_user_info else 0
+        plan = await PcPlan.get(params.plan_id, to_dict=True)
+        cases = plan.get('cases') if plan else None
+        if not cases:
+            raise ParameterError('计划不存在或没有关联用例')
 
-        # 创建计划报告主表
-        plan_report_data = {
-            "report_name": f"{plan.name}_计划报告",
-            "plan_id": plan.id,
-            "plan_name": plan.name,
-            "status": 2,
-            "total_count": len(case_ids),
-            "executor_id": executor_id,
-            "device_identity": identity,
-        }
-        plan_report = await PcPlanReport.create_or_update(plan_report_data)
-        plan_report_id = plan_report["id"]
-
-        # 逐个执行用例
-        for case_id in case_ids:
+        results = []
+        for case_item in cases:
+            if isinstance(case_item, int):
+                case_id = case_item
+            elif isinstance(case_item, dict):
+                case_id = case_item.get('id') or case_item.get('case_id')
+            else:
+                continue
+            if not case_id:
+                continue
+            req = PcRunCaseRequest(
+                case_id=case_id,
+                pc_device_identity=params.pc_device_identity,
+                report_name=f'{case_id}_{get_time(1)}',
+            )
             try:
-                run_result = await PcTestcaseService.run(
-                    PcTestcaseRunIn(id=case_id, pc_device_identity=identity)
-                )
-                await PcPlanReportDetail.create_or_update({
-                    "plan_report_id": plan_report_id,
-                    "case_id": case_id,
-                    "report_id": run_result["report_id"],
-                    "status": 2,
-                })
+                resp = await PcTestcaseService.run_pc_cases(req)
             except Exception as e:
-                await PcPlanReportDetail.create_or_update({
-                    "plan_report_id": plan_report_id,
-                    "case_id": case_id,
-                    "status": 0,
-                    "success": False,
-                })
-
-        return {"plan_report_id": plan_report_id}
+                resp = {'error': str(e)}
+            results.append({'case_id': case_id, 'result': resp})
+        return results

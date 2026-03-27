@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-PC 素材定时清理任务
-"""
-from loguru import logger
-
 from celery_worker.base import run_async
 from celery_worker.worker import celery
 
 
-@celery.task(name="celery_worker.tasks.pc_picture.cleanup_unbound_pc_pictures")
-def cleanup_unbound_pc_pictures():
-    """清理未绑定任何用例/树节点的 PC 图片素材"""
+@celery.task(name='pc_picture.cleanup_unbound_pictures')
+def cleanup_unbound_pictures(expire_days=7, dry_run=False, hard_delete=True, **kwargs):
     from autotest.services.pc_autotest.pc_picture_service import PcPictureService
-    count = run_async(PcPictureService.cleanup_unbound())
-    logger.info(f"PC素材定时清理完成，共清理 {count} 条未绑定素材")
-    return count
+    return run_async(PcPictureService.cleanup_unbound_pictures(
+        expire_days=expire_days,
+        dry_run=dry_run,
+        hard_delete=hard_delete,
+    ))

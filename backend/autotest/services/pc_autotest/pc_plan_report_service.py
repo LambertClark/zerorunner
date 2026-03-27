@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from autotest.exceptions.exceptions import ParameterError
-from autotest.models.pc_plan_report_models import PcPlanReport, PcPlanReportDetail
+import typing
+
+from autotest.models.pc_plan_report_models import PcPlanReports, PcPlanReportDetail
 from autotest.schemas.pc_autotest.pc_plan_report import (
-    PcPlanReportQuery, PcPlanReportId, PcPlanReportDetailQuery,
+    PcPlanReportQuery, PcPlanReportIn, PcPlanReportDetailQuery,
 )
 
 
@@ -11,22 +12,32 @@ class PcPlanReportService:
 
     @staticmethod
     async def list(params: PcPlanReportQuery):
-        return await PcPlanReport.get_list(params)
+        return await PcPlanReports.get_list(params)
 
     @staticmethod
-    async def get_by_id(params: PcPlanReportId) -> dict:
-        report = await PcPlanReport.get(params.id, to_dict=True)
-        if not report:
-            raise ParameterError("计划报告不存在")
-        return report
+    async def save_or_update(params: PcPlanReportIn):
+        print(params)
+        return await PcPlanReports.create_or_update(params.dict())
 
     @staticmethod
-    async def deleted(id: int):
-        report = await PcPlanReport.get(id)
-        if not report:
-            raise ParameterError("计划报告不存在")
-        return await PcPlanReport.delete(id)
+    async def detail(params: PcPlanReportQuery):
+        return await PcPlanReports.get_report_by_id(params.id)
 
     @staticmethod
-    async def get_detail_list(params: PcPlanReportDetailQuery):
-        return await PcPlanReportDetail.get_list(params)
+    async def delete(id: int):
+        return await PcPlanReports.delete(id)
+
+    @staticmethod
+    async def get_report_detail(params: PcPlanReportDetailQuery):
+        return await PcPlanReportDetail.model(params.report_id).get_details(params)
+
+    @staticmethod
+    async def get_report_statistics(params: PcPlanReportDetailQuery):
+        return await PcPlanReportDetail.model(params.report_id).statistics(params)
+
+    @staticmethod
+    async def save_report_detail(params: typing.Dict):
+        report_id = params.get('report_id')
+        if not report_id:
+            raise ValueError('报告ID不能为空')
+        return await PcPlanReportDetail.model(report_id).create_or_update(params)
