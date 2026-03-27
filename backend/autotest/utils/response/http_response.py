@@ -47,6 +47,12 @@ def partner_success(data=None,
     return ORJSONResponse(status_code=http_code, content=content, headers=headers)
 
 
+async def respond_with_data(service_method, params):
+    """通用异步服务调用包装器：await service_method(params) 并用 partner_success 包装返回"""
+    data = await service_method(params)
+    return partner_success(data)
+
+
 def resp_200(*, data: typing.Any = '', msg: str = "Success") -> dict:
     logger.info(msg)
     return {'code': 200, 'data': data, 'msg': msg}

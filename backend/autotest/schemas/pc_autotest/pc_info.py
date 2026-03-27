@@ -4,6 +4,7 @@ import typing
 from pydantic import Field
 
 from autotest.schemas.base import BaseSchema
+from autotest.schemas.step_data import TStepData, ApiBaseSchema
 
 
 class PcDeviceQuery(BaseSchema):
@@ -29,3 +30,26 @@ class PcDeviceIn(BaseSchema):
 class PcDeviceId(BaseSchema):
     """设备ID"""
     id: int = Field(..., description="设备ID")
+
+
+class PcInfoIn(TStepData):
+    """PC用例单步骤节点入参"""
+    id: typing.Optional[int] = Field(None, description="步骤ID")
+    project_id: typing.Optional[int] = Field(None, description="项目ID")
+    module_id: typing.Optional[int] = Field(None, description="模块ID")
+    status: typing.Optional[int] = Field(None, description="状态")
+    env_id: typing.Optional[int] = Field(None, description="环境ID")
+    code_id: typing.Optional[int] = Field(None, description="代码ID")
+    code: typing.Optional[str] = Field(None, description="代码")
+    priority: typing.Optional[int] = Field(None, description="优先级")
+    method: typing.Optional[str] = Field(None, description="请求方法")
+    url: typing.Optional[str] = Field(None, description="请求URL")
+    tags: typing.Optional[typing.List[str]] = Field(None, description="标签")
+    remarks: typing.Optional[str] = Field(None, description="备注")
+    headers: typing.Optional[typing.List[ApiBaseSchema]] = Field(None, description="请求头")
+    children_steps: typing.List["PcInfoIn"] = Field([], description="子步骤")
+    children: typing.List["PcInfoIn"] = Field([], description="子节点（兼容树形结构）")
+    case_template_id: typing.Optional[int] = Field(None, description="模板用例ID")
+
+
+PcInfoIn.update_forward_refs()

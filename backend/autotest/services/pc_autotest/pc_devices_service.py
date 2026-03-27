@@ -1,35 +1,30 @@
 # -*- coding: utf-8 -*-
 from autotest.exceptions.exceptions import ParameterError
 from autotest.models.pc_device_models import PcDevice
-from autotest.schemas.pc_autotest.pc_info import PcDeviceQuery, PcDeviceIn, PcDeviceId
+from autotest.models.pc_testcase_models import PcCase  # noqa: 历史依赖，保留
+from autotest.schemas.pc_autotest.pc_device_query import PcDeviceQuery
+from autotest.schemas.pc_autotest.pc_info import PcDeviceIn, PcDeviceId
 
 
-class PcDeviceService:
+class PcDevicesService:
     """PC执行设备服务"""
+
+    @staticmethod
+    async def save_or_update(params: PcDeviceQuery):
+        return await PcDevice.create_or_update(params.dict())
 
     @staticmethod
     async def list(params: PcDeviceQuery):
         return await PcDevice.get_list(params)
 
     @staticmethod
-    async def save_or_update(params: PcDeviceIn):
-        # identity 唯一性校验（新增时）
-        if not params.id:
-            existing = await PcDevice.get_by_identity(params.identity)
-            if existing:
-                raise ParameterError(f"设备标识 [{params.identity}] 已存在")
-        return await PcDevice.create_or_update(params.dict())
+    async def detail(params: PcDeviceQuery):
+        return await PcDevice.get_plan_by_id(params.id)
 
     @staticmethod
-    async def deleted(id: int):
-        device = await PcDevice.get(id)
-        if not device:
-            raise ParameterError("设备不存在")
+    async def delete(id: int):
         return await PcDevice.delete(id)
 
-    @staticmethod
-    async def get_by_id(params: PcDeviceId):
-        device = await PcDevice.get(params.id, to_dict=True)
-        if not device:
-            raise ParameterError("设备不存在")
-        return device
+    @classmethod
+    async def get(cls, pc_id):
+        return await PcDevice.get(pc_id)

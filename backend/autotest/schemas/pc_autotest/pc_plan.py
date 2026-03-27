@@ -9,8 +9,13 @@ from autotest.schemas.base import BaseSchema
 class PcPlanQuery(BaseSchema):
     """PC测试计划查询"""
     id: typing.Optional[int] = Field(None, description="计划ID")
-    name: typing.Optional[str] = Field(None, description="计划名称")
-    project_id: typing.Optional[int] = Field(None, description="项目ID")
+    title: typing.Optional[str] = Field(None, description="计划标题")
+    desc: typing.Optional[str] = Field(None, description="描述")
+    enabled_flag: typing.Optional[int] = Field(None, description="是否启用")
+    created_by: typing.Optional[int] = Field(None, description="创建人ID")
+    created_by_name: typing.Optional[str] = Field(None, description="创建人名称")
+    updated_by: typing.Optional[int] = Field(None, description="更新人ID")
+    updated_by_name: typing.Optional[str] = Field(None, description="更新人名称")
     page: int = Field(1, description="页码")
     pageSize: int = Field(20, description="每页数量")
 
@@ -18,12 +23,14 @@ class PcPlanQuery(BaseSchema):
 class PcPlanIn(BaseSchema):
     """PC测试计划入参"""
     id: typing.Optional[int] = Field(None, description="计划ID")
-    name: str = Field(..., description="计划名称")
-    project_id: typing.Optional[int] = Field(None, description="项目ID")
-    case_ids: typing.Optional[typing.List[int]] = Field([], description="关联用例ID列表")
-    pc_device_identity: typing.Optional[str] = Field(None, description="默认执行设备标识")
-    remarks: typing.Optional[str] = Field(None, description="备注")
+    title: typing.Optional[str] = Field(None, description="计划标题")
+    cases: typing.Optional[typing.List[typing.Any]] = Field([], description="关联用例列表")
+    desc: typing.Optional[str] = Field(None, description="描述")
     enabled_flag: int = Field(1, description="是否启用")
+    created_by: typing.Optional[int] = Field(None, description="创建人ID")
+    created_by_name: typing.Optional[str] = Field(None, description="创建人名称")
+    updated_by: typing.Optional[int] = Field(None, description="更新人ID")
+    updated_by_name: typing.Optional[str] = Field(None, description="更新人名称")
 
 
 class PcPlanId(BaseSchema):
@@ -31,7 +38,13 @@ class PcPlanId(BaseSchema):
     id: int = Field(..., description="计划ID")
 
 
-class PcPlanRunIn(BaseSchema):
-    """PC计划执行入参"""
-    id: int = Field(..., description="计划ID")
-    pc_device_identity: typing.Optional[str] = Field(None, description="覆盖执行设备标识")
+class PcPlanRun(BaseSchema):
+    """PC计划执行请求"""
+    plan_id: int = Field(..., description="计划ID")
+    pc_device_identity: typing.Optional[str] = Field(None, description="执行设备标识")
+
+
+# 向后兼容别名
+class PcPlanRunIn(PcPlanRun):
+    """向后兼容：PC计划执行入参"""
+    id: typing.Optional[int] = Field(None, description="计划ID（兼容旧字段）")

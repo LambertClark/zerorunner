@@ -63,3 +63,6 @@ class CodeEnum(Enum):
 
     # task 定时任务 18000 - 19000
     TASK_NAME_EXIST = (18000, "定时任务名称以存在")
+
+    # PC 素材树 19000 - 20000
+    ROOT_NODE_NAME_EXISTS = (19000, "根节点名称已存在")

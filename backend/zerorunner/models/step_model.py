@@ -141,7 +141,7 @@ class TScriptRequest(BaseModel):
     script_content: str = Field(None, description="脚本类容")
 
 
-class TPcBaseRequest(BaseModel):
+class TPcRequest(BaseModel):
     """PC自动化请求基类 —— 包含所有 PC 步骤公共字段"""
     # 图片字段
     image: typing.Optional[str] = Field(None, description="主图片URL")
@@ -158,115 +158,117 @@ class TPcBaseRequest(BaseModel):
     text: typing.Optional[str] = Field(None, description="键盘输入文本")
     remarks: typing.Optional[str] = Field(None, description="备注")
     # 区域偏移（父级区域）
-    regionOffsetX: typing.Optional[float] = Field(None, description="父级区域X偏移")
-    regionOffsetY: typing.Optional[float] = Field(None, description="父级区域Y偏移")
-    regionWidth: typing.Optional[float] = Field(None, description="父级区域宽度")
-    regionHeight: typing.Optional[float] = Field(None, description="父级区域高度")
+    regionOffsetX: typing.Optional[int] = Field(None, description="父级区域X偏移")
+    regionOffsetY: typing.Optional[int] = Field(None, description="父级区域Y偏移")
+    regionWidth: typing.Optional[int] = Field(None, description="父级区域宽度")
+    regionHeight: typing.Optional[int] = Field(None, description="父级区域高度")
     # 轨迹区域偏移
-    trackRegionOffsetX: typing.Optional[float] = Field(None, description="轨迹区域X偏移")
-    trackRegionOffsetY: typing.Optional[float] = Field(None, description="轨迹区域Y偏移")
-    trackRegionWidth: typing.Optional[float] = Field(None, description="轨迹区域宽度")
-    trackRegionHeight: typing.Optional[float] = Field(None, description="轨迹区域高度")
+    trackRegionOffsetX: typing.Optional[int] = Field(None, description="轨迹区域X偏移")
+    trackRegionOffsetY: typing.Optional[int] = Field(None, description="轨迹区域Y偏移")
+    trackRegionWidth: typing.Optional[int] = Field(None, description="轨迹区域宽度")
+    trackRegionHeight: typing.Optional[int] = Field(None, description="轨迹区域高度")
     # pip 专用
-    targetPercentage: typing.Optional[float] = Field(None, description="目标百分比（pip拖拽用）")
+    targetPercentage: typing.Optional[int] = Field(None, description="目标百分比（pip拖拽用）")
     isHorizontal: typing.Optional[bool] = Field(None, description="是否水平方向（pip滑块用）")
 
 
 # ---------- PC 具体请求类型（每个只覆写 request_type_ 的 Literal）----------
 
-class TPcMouseLeftClickRequest(TPcBaseRequest):
-    request_type_: typing.Literal["mouse_left_click"] = Field("mouse_left_click", exclude=True)
-
-
-class TPcMouseRightClickRequest(TPcBaseRequest):
+class TPcMouseRightClickRequest(TPcRequest):
     request_type_: typing.Literal["mouse_right_click"] = Field("mouse_right_click", exclude=True)
 
 
-class TPcMouseDoubleClickRequest(TPcBaseRequest):
+class TPcMouseLiftClickRequest(TPcRequest):
+    request_type_: typing.Literal["mouse_left_click"] = Field("mouse_left_click", exclude=True)
+
+
+class TPcMouseDoubleClickRequest(TPcRequest):
     request_type_: typing.Literal["mouse_double_click"] = Field("mouse_double_click", exclude=True)
 
 
-class TPcMouseHoverRequest(TPcBaseRequest):
+class TPcMouseHoverRequest(TPcRequest):
     request_type_: typing.Literal["mouse_hover"] = Field("mouse_hover", exclude=True)
 
 
-class TPcMouseDragRequest(TPcBaseRequest):
+class TPcMouseDragRequest(TPcRequest):
     request_type_: typing.Literal["mouse_drag"] = Field("mouse_drag", exclude=True)
 
 
-class TPcMouseScrollDownRequest(TPcBaseRequest):
+class TPcMouseScrollWheelDownRequest(TPcRequest):
     request_type_: typing.Literal["mouse_scroll_wheel_down"] = Field("mouse_scroll_wheel_down", exclude=True)
 
 
-class TPcMouseScrollUpRequest(TPcBaseRequest):
+class TPcMouseScrollWheelUpRequest(TPcRequest):
     request_type_: typing.Literal["mouse_scroll_wheel_up"] = Field("mouse_scroll_wheel_up", exclude=True)
 
 
-class TPcKeyboardInputRequest(TPcBaseRequest):
+class TPcKeyboardInputRequest(TPcRequest):
     request_type_: typing.Literal["keyboard_input"] = Field("keyboard_input", exclude=True)
 
 
-class TPcKeyboardClearRequest(TPcBaseRequest):
+class TPcKeyboardClearRequest(TPcRequest):
     request_type_: typing.Literal["keyboard_clear"] = Field("keyboard_clear", exclude=True)
 
 
-class TPcKeyboardSelectAllRequest(TPcBaseRequest):
+class TPcKeyboardSelectAllRequest(TPcRequest):
     request_type_: typing.Literal["keyboard_select_all"] = Field("keyboard_select_all", exclude=True)
 
 
-class TPcKeyboardEnterRequest(TPcBaseRequest):
+class TPcKeyboardEnterRequest(TPcRequest):
     request_type_: typing.Literal["keyboard_enter"] = Field("keyboard_enter", exclude=True)
 
 
-class TPcKeyboardCombinationKeyRequest(TPcBaseRequest):
+class TPcKeyboardCombinationKeyRequest(TPcRequest):
     request_type_: typing.Literal["keyboard_combination_key"] = Field("keyboard_combination_key", exclude=True)
+    keys: typing.List[str] = Field([], description="组合键列表")
 
 
-class TPcFlowWaitRequest(TPcBaseRequest):
+class TPcWaitRequest(TPcRequest):
     request_type_: typing.Literal["flow_wait"] = Field("flow_wait", exclude=True)
     wait_time: int = Field(0, description="等待时间(ms)")
 
 
-class TPcFlowWaitElementRequest(TPcBaseRequest):
+class TPcWaitElementRequest(TPcRequest):
     request_type_: typing.Literal["flow_wait_element"] = Field("flow_wait_element", exclude=True)
-    timeout: int = Field(10000, description="超时时间(ms)")
+    waitElementType: str = Field("", description="等待元素类型")
+    wait_time: int = Field(10000, description="超时时间(ms)")
 
 
-class TPcFlowCaseTemplateRequest(TPcBaseRequest):
+class TPcCaseTemplateRequest(TPcRequest):
     request_type_: typing.Literal["flow_case_template"] = Field("flow_case_template", exclude=True)
     template_case_id: typing.Optional[int] = Field(None, description="模板用例id")
 
 
-class TPcPipSwitchClickRequest(TPcBaseRequest):
+class TPcPipSwitchClickRequest(TPcRequest):
     request_type_: typing.Literal["pip_switch_click"] = Field("pip_switch_click", exclude=True)
 
 
-class TPcPipTimelineDragRequest(TPcBaseRequest):
+class TPcPipTimelineDragRequest(TPcRequest):
     request_type_: typing.Literal["pip_timeline_drag"] = Field("pip_timeline_drag", exclude=True)
 
 
-class TPcPipSliderDragRequest(TPcBaseRequest):
+class TPcPipSliderDragRequest(TPcRequest):
     request_type_: typing.Literal["pip_slider_drag"] = Field("pip_slider_drag", exclude=True)
 
 
 TStepRequest = typing.Union[
     TRequest, TSqlRequest, TIFRequest, TWaitRequest, TScriptRequest, TLoopRequest, TUiRequest,
     # PC 自动化类型
-    TPcMouseLeftClickRequest,
     TPcMouseRightClickRequest,
+    TPcMouseLiftClickRequest,
     TPcMouseDoubleClickRequest,
     TPcMouseHoverRequest,
     TPcMouseDragRequest,
-    TPcMouseScrollDownRequest,
-    TPcMouseScrollUpRequest,
+    TPcMouseScrollWheelDownRequest,
+    TPcMouseScrollWheelUpRequest,
     TPcKeyboardInputRequest,
     TPcKeyboardClearRequest,
     TPcKeyboardSelectAllRequest,
     TPcKeyboardEnterRequest,
     TPcKeyboardCombinationKeyRequest,
-    TPcFlowWaitRequest,
-    TPcFlowWaitElementRequest,
-    TPcFlowCaseTemplateRequest,
+    TPcWaitRequest,
+    TPcWaitElementRequest,
+    TPcCaseTemplateRequest,
     TPcPipSwitchClickRequest,
     TPcPipTimelineDragRequest,
     TPcPipSliderDragRequest,

@@ -85,3 +85,10 @@ class EnvConfInitError(MyBaseException):
     def __init__(self, err_code: typing.Union[CodeEnum, str]):
         super(EnvConfInitError, self).__init__(err_code)
 
+
+class RootNodeNameExistsError(MyBaseException):
+    """ 根节点名称已存在 """
+
+    def __init__(self, msg: str = "根节点名称已存在"):
+        super(RootNodeNameExistsError, self).__init__(msg)
+

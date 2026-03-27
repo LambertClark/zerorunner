@@ -8,10 +8,10 @@ from pydantic import BaseModel, Field, root_validator
 from autotest.schemas.base import BaseSchema
 from zerorunner.models.step_model import TStep, ValidatorData, TSqlRequest, TRequest, TIFRequest, TWaitRequest, \
     TScriptRequest, TLoopRequest, TUiRequest, \
-    TPcMouseLeftClickRequest, TPcMouseRightClickRequest, TPcMouseDoubleClickRequest, TPcMouseHoverRequest, \
-    TPcMouseDragRequest, TPcMouseScrollDownRequest, TPcMouseScrollUpRequest, TPcKeyboardInputRequest, \
+    TPcMouseRightClickRequest, TPcMouseLiftClickRequest, TPcMouseDoubleClickRequest, TPcMouseHoverRequest, \
+    TPcMouseDragRequest, TPcMouseScrollWheelDownRequest, TPcMouseScrollWheelUpRequest, TPcKeyboardInputRequest, \
     TPcKeyboardClearRequest, TPcKeyboardSelectAllRequest, TPcKeyboardEnterRequest, TPcKeyboardCombinationKeyRequest, \
-    TPcFlowWaitRequest, TPcFlowWaitElementRequest, TPcFlowCaseTemplateRequest, \
+    TPcWaitRequest, TPcWaitElementRequest, TPcCaseTemplateRequest, \
     TPcPipSwitchClickRequest, TPcPipTimelineDragRequest, TPcPipSliderDragRequest
 
 
@@ -87,10 +87,10 @@ class TStepSqlData(BaseModel):
 TStepRequest = typing.Union[
     TRequestData, TSqlData, TIFRequest, TWaitRequest, TScriptRequest, TLoopRequest, TUiRequest,
     # PC 自动化类型
-    TPcMouseLeftClickRequest, TPcMouseRightClickRequest, TPcMouseDoubleClickRequest, TPcMouseHoverRequest,
-    TPcMouseDragRequest, TPcMouseScrollDownRequest, TPcMouseScrollUpRequest, TPcKeyboardInputRequest,
+    TPcMouseRightClickRequest, TPcMouseLiftClickRequest, TPcMouseDoubleClickRequest, TPcMouseHoverRequest,
+    TPcMouseDragRequest, TPcMouseScrollWheelDownRequest, TPcMouseScrollWheelUpRequest, TPcKeyboardInputRequest,
     TPcKeyboardClearRequest, TPcKeyboardSelectAllRequest, TPcKeyboardEnterRequest, TPcKeyboardCombinationKeyRequest,
-    TPcFlowWaitRequest, TPcFlowWaitElementRequest, TPcFlowCaseTemplateRequest,
+    TPcWaitRequest, TPcWaitElementRequest, TPcCaseTemplateRequest,
     TPcPipSwitchClickRequest, TPcPipTimelineDragRequest, TPcPipSliderDragRequest,
 ]
 

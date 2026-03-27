@@ -1,38 +1,53 @@
 # -*- coding: utf-8 -*-
 import typing
 
-from sqlalchemy import String, Integer, JSON, select, func, Text
+from sqlalchemy import String, Integer, JSON, Boolean, Text, select, update, insert, func
 from sqlalchemy.orm import aliased, mapped_column
 
 from autotest.models.api_models import ProjectInfo, ModuleInfo
 from autotest.models.base import Base
 from autotest.models.system_models import User
-from autotest.schemas.pc_autotest.pc_case import PcTestcaseQuery
+from autotest.schemas.pc_autotest.pc_testcase_query import PcCaseQuery
 
 
 class PcCase(Base):
     """PC自动化用例表"""
     __tablename__ = 'pc_case'
 
-    name = mapped_column(String(255), nullable=False, comment='用例名称', index=True)
+    title = mapped_column(String(255), nullable=False, comment='用例标题', index=True)
+    is_template = mapped_column(Integer, default=0, comment='是否模板 0否 1是')
+    priority = mapped_column(Integer, default=0, comment='优先级')
+    suite = mapped_column(String(255), comment='套件')
+    module = mapped_column(String(255), comment='模块名称')
+    step_data = mapped_column(JSON, comment='步骤树(JSON)')
+    desc = mapped_column(Text, comment='描述')
+    events = mapped_column(JSON, comment='事件')
+    platforms = mapped_column(JSON, comment='平台')
     project_id = mapped_column(Integer, comment='项目ID')
     module_id = mapped_column(Integer, comment='模块ID')
-    pc_device_identity = mapped_column(String(255), comment='绑定执行设备标识')
-    step_data = mapped_column(JSON, comment='步骤树(JSON)')
-    tags = mapped_column(JSON, comment='标签')
-    remarks = mapped_column(Text, comment='备注')
 
     @classmethod
-    async def get_list(cls, params: PcTestcaseQuery):
+    async def get_list(cls, params: PcCaseQuery, order_by: str = "desc"):
         q = [cls.enabled_flag == 1]
-        if params.name:
-            q.append(cls.name.like(f'%{params.name}%'))
-        if params.project_id:
-            q.append(cls.project_id == params.project_id)
-        if params.module_id:
-            q.append(cls.module_id == params.module_id)
-        if params.pc_device_identity:
-            q.append(cls.pc_device_identity == params.pc_device_identity)
+        if params.id:
+            q.append(cls.id == params.id)
+        if params.title:
+            q.append(cls.title.like(f'%{params.title}%'))
+        if params.prioritys:
+            q.append(cls.priority.in_(params.prioritys))
+        if params.suite:
+            q.append(cls.suite == params.suite)
+        if params.module:
+            q.append(cls.module_id == params.module)
+        if params.is_template:
+            q.append(cls.is_template == params.is_template)
+        else:
+            q.append(cls.is_template == 0)
+        if params.created_by:
+            q.append(cls.created_by == params.created_by)
+        if params.created_by_name:
+            q.append(User.nickname.like(f'%{params.created_by_name}%'))
+
         u = aliased(User)
         stmt = (
             select(
@@ -70,3 +85,22 @@ class PcCase(Base):
             .outerjoin(User, User.id == cls.created_by)
         )
         return await cls.get_result(stmt, first=True)
+
+    @classmethod
+    async def create_or_update(cls, params: dict) -> dict:
+        params = {key: value for key, value in params.items() if hasattr(cls, key)}
+        step_data = params.get("step_data")
+        print(step_data)
+        params = await cls.handle_params(params)
+        id = params.get("id", None)
+        if id:
+            params.pop("created_by", None)
+            params.pop("created_by_name", None)
+            stmt = update(cls).where(cls.id == id).values(**params)
+            await cls.execute(stmt)
+        else:
+            stmt = insert(cls).values(**params)
+            result = await cls.execute(stmt)
+            (primary_key,) = result.inserted_primary_key
+            params["id"] = primary_key
+        return params
