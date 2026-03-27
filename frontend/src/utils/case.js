@@ -31,6 +31,25 @@ export const  stepTypeEnum  ={
 	Sql : "sql",
 	If : "if",
 	TimedTask : "timed_task",
+	// PC 自动化步骤类型
+	PcMouseLeftClick: "mouse_left_click",
+	PcMouseRightClick: "mouse_right_click",
+	PcMouseDoubleClick: "mouse_double_click",
+	PcMouseHover: "mouse_hover",
+	PcMouseDrag: "mouse_drag",
+	PcMouseScrollDown: "mouse_scroll_wheel_down",
+	PcMouseScrollUp: "mouse_scroll_wheel_up",
+	PcKeyboardInput: "keyboard_input",
+	PcKeyboardClear: "keyboard_clear",
+	PcKeyboardSelectAll: "keyboard_select_all",
+	PcKeyboardEnter: "keyboard_enter",
+	PcKeyboardCombination: "keyboard_combination_key",
+	PcFlowWait: "flow_wait",
+	PcFlowWaitElement: "flow_wait_element",
+	PcFlowCaseTemplate: "flow_case_template",
+	PcPipSwitchClick: "pip_switch_click",
+	PcPipTimelineDrag: "pip_timeline_drag",
+	PcPipSliderDrag: "pip_slider_drag",
 }
 
 export const stepTypeList = [
