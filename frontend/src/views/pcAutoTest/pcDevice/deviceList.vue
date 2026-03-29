@@ -2,7 +2,8 @@
   <div class="app-container">
     <el-card>
       <div class="mb15">
-        <el-button type="primary" @click="getList">刷新</el-button>
+        <el-button type="primary" @click="search">查询</el-button>
+        <el-button type="success" @click="openDialog">新增执行机</el-button>
       </div>
 
       <z-table
@@ -12,52 +13,129 @@
           v-model:page-size="state.listQuery.pageSize"
           v-model:page="state.listQuery.page"
           :total="state.total"
-          @pagination-change="getList"
+          @pagination-change="getDevices"
       />
     </el-card>
   </div>
 </template>
 
-<script setup name="pcDeviceList">
-import { h, onMounted, reactive, ref } from 'vue'
+<script setup name="pcAgentDeviceList">
+import { h, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElTag } from 'element-plus'
 import { usePcDevicesApi } from '/@/api/usePcAutoApi/pcDevices.js'
+// TODO: 创建 useAppAutoTestApi 后取消注释
+// import { useAppAutoTestApi } from '/@/api/usePcAutoApi/appAutoTest.js'
 
+const router = useRouter()
 const tableRef = ref()
-const devicesApi = usePcDevicesApi()
+let timer = null
+
+/**
+ * collection_time 距今超过 60 秒视为离线
+ */
+const calculateStatus = (collectionTime) => {
+  if (!collectionTime) return 'offline'
+  const diff = Date.now() - new Date(collectionTime).getTime()
+  return diff <= 60 * 1000 ? 'online' : 'offline'
+}
 
 const state = reactive({
   listData: [],
   total: 0,
   listQuery: { page: 1, pageSize: 20 },
+  dialogVisible: false,
+  editRow: null,
   columns: [
     { label: '序号', columnType: 'index', align: 'center', width: 'auto' },
-    { key: 'name', label: '执行机名称', width: '' },
-    { key: 'host', label: '主机地址', align: 'center', width: '160' },
-    { key: 'port', label: '端口', align: 'center', width: '80' },
+    { key: 'user_name', label: '用户名', align: 'center', width: '120' },
+    { key: 'identity', label: '执行机标识', align: 'center', width: '180' },
+    { key: 'os_name', label: '操作系统', align: 'center', width: '140' },
+    { key: 'screen_size', label: '显示器尺寸', align: 'center', width: '120' },
+    { key: 'memory', label: '内存', align: 'center', width: '100' },
+    { key: 'cpu', label: 'CPU', align: 'center', width: '120' },
+    { key: 'disk', label: '磁盘', align: 'center', width: '120' },
     {
-      key: 'status', label: '状态', align: 'center', width: '100',
-      render: ({ row }) => h(ElTag, {
-        type: row.status === 'online' ? 'success' : 'danger',
-      }, () => row.status === 'online' ? '在线' : '离线'),
+      key: 'collection_time',
+      label: '状态',
+      align: 'center',
+      width: '90',
+      render: ({ row }) => {
+        const status = calculateStatus(row.collection_time)
+        return h(ElTag, { type: status === 'online' ? 'success' : 'danger' }, () => status === 'online' ? '在线' : '离线')
+      },
     },
-    { key: 'os_info', label: '系统信息', align: 'center', width: '180' },
-    { key: 'last_heartbeat', label: '最后心跳', align: 'center', width: '160' },
-    { key: 'remarks', label: '备注', width: '' },
+    { key: 'updation_date', label: '更新时间', align: 'center', width: '160' },
+    {
+      label: '操作',
+      align: 'center',
+      width: '160',
+      render: ({ row }) => [
+        h('el-button', {
+          size: 'small',
+          type: 'primary',
+          onClick: () => editDevice(row),
+        }, '编辑'),
+        h('el-button', {
+          size: 'small',
+          type: row.status === 'online' ? 'danger' : 'success',
+          onClick: () => changeDeviceStatus(row),
+        }, row.status === 'online' ? '禁用' : '启用'),
+      ],
+    },
   ],
 })
 
-const getList = () => {
-  tableRef.value.openLoading()
-  devicesApi.getList(state.listQuery)
+const getDevices = () => {
+  if (tableRef.value) tableRef.value.openLoading?.()
+  usePcDevicesApi().getPcDevices(state.listQuery)
     .then((res) => {
       state.listData = res.data.rows
       state.total = res.data.rowTotal
     })
-    .finally(() => tableRef.value.closeLoading())
+    .finally(() => {
+      if (tableRef.value) tableRef.value.closeLoading?.()
+    })
 }
 
-onMounted(() => { getList() })
+const search = () => {
+  state.listQuery.page = 1
+  getDevices()
+}
+
+const openDialog = () => {
+  state.editRow = null
+  state.dialogVisible = true
+}
+
+const toggleDialog = (visible) => {
+  state.dialogVisible = visible !== undefined ? visible : !state.dialogVisible
+}
+
+const editDevice = (row) => {
+  state.editRow = row
+  state.dialogVisible = true
+}
+
+const changeDeviceStatus = (row) => {
+  // 切换设备启用/禁用状态
+  usePcDevicesApi().getPcDevices({ id: row.id, status: row.status === 'online' ? 'offline' : 'online' })
+    .then(() => {
+      getDevices()
+    })
+}
+
+onMounted(() => {
+  getDevices()
+  timer = setInterval(getDevices, 60000)
+})
+
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+})
 </script>
 
 <style lang="scss" scoped></style>

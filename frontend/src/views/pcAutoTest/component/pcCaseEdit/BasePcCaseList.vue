@@ -3,13 +3,14 @@
     <el-card>
       <div class="mb15">
         <el-input
-            v-model="state.listQuery.name"
+            v-model="state.listQuery.title"
             placeholder="请输入用例名称"
             style="max-width: 200px"
             clearable
+            @keyup.enter="search"
         />
         <el-button type="primary" class="ml10" @click="search">查询</el-button>
-        <el-button type="success" class="ml10" @click="toEdit(null)">新增</el-button>
+        <el-button type="success" class="ml10" @click="onOpenSaveOrUpdate(null)">新增</el-button>
       </div>
 
       <z-table
@@ -24,12 +25,7 @@
     </el-card>
 
     <!-- 执行弹窗 -->
-    <PcCaseExecute
-        v-if="state.showExecuteDialog"
-        v-model:visible="state.showExecuteDialog"
-        :case-ids="state.executeCaseIds"
-        @run-success="onRunSuccess"
-    />
+    <PcCaseExecute ref="executeRef" @open-report="onOpenReport"/>
   </div>
 </template>
 
@@ -37,34 +33,24 @@
 import { h, onMounted, reactive, ref } from 'vue'
 import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { usePcTestCaseApi } from '/@/api/usePcAutoApi/pcTestCase'
 import PcCaseExecute from '/@/views/pcAutoTest/form/PcCaseExecute.vue'
 
 const props = defineProps({
-  // 用于区分是"普通用例"还是"模板用例"
-  caseType: {
-    type: String,
-    default: 'case', // 'case' | 'template'
+  isTemplate: {
+    type: Boolean,
+    default: false,
   },
-  // 编辑页路由名
   editRouteName: {
     type: String,
     required: true,
   },
-  // API 实例（由父页面传入，避免在公共组件中硬编码）
-  api: {
-    type: Object,
-    required: true,
-  },
-  // 是否显示"运行"按钮（模板用例不需要）
-  showRun: {
-    type: Boolean,
-    default: true,
-  },
 })
 
-const emit = defineEmits(['run-success'])
+const emit = defineEmits(['open-report'])
 
 const tableRef = ref()
+const executeRef = ref()
 const router = useRouter()
 
 const state = reactive({
@@ -73,21 +59,24 @@ const state = reactive({
   listQuery: {
     page: 1,
     pageSize: 20,
-    name: '',
+    title: '',
+    is_template: props.isTemplate,
+    created_by: '',
+    prioritys: [],
+    module: null,
   },
-  showExecuteDialog: false,
-  executeCaseIds: [],
+  modules: [],
   columns: buildColumns(),
 })
 
 function buildColumns() {
-  const cols = [
-    { label: '序号', columnType: 'index', width: 'auto', show: true },
+  return [
+    { label: '序号', columnType: 'index', width: 'auto', align: 'center', show: true },
     {
       key: 'name', label: '用例名称', width: '', show: true,
       render: ({ row }) => h(ElButton, {
         link: true, type: 'primary',
-        onClick: () => toEdit(row),
+        onClick: () => onOpenSaveOrUpdate(row),
       }, () => row.name),
     },
     { key: 'remarks', label: '备注', width: '', align: 'center', show: true },
@@ -96,17 +85,17 @@ function buildColumns() {
     { key: 'creation_date', label: '创建时间', width: '150', align: 'center', show: true },
     { key: 'created_by_name', label: '创建人', width: '', align: 'center', show: true },
     {
-      label: '操作', fixed: 'right', width: props.showRun ? '200' : '150', align: 'center',
+      label: '操作', fixed: 'right', width: props.isTemplate ? '150' : '200', align: 'center',
       render: ({ row }) => h('div', null, [
-        props.showRun
+        !props.isTemplate
           ? h(ElButton, {
               type: 'primary',
-              onClick: () => openExecuteDialog(row),
+              onClick: () => onOpenRunConfigDialog(row),
             }, () => '运行')
           : null,
         h(ElButton, {
           type: 'warning',
-          onClick: () => toEdit(row),
+          onClick: () => onOpenSaveOrUpdate(row),
         }, () => '编辑'),
         h(ElButton, {
           type: 'danger',
@@ -115,7 +104,6 @@ function buildColumns() {
       ]),
     },
   ]
-  return cols
 }
 
 const search = () => {
@@ -123,34 +111,36 @@ const search = () => {
   getList()
 }
 
+const getCasesModules = () => {
+  usePcTestCaseApi().getCasesModules({ is_template: props.isTemplate }).then((res) => {
+    state.modules = res.data || []
+  })
+}
+
 const getList = () => {
-  tableRef.value.openLoading()
-  const apiFn = props.caseType === 'template'
-    ? props.api.getPcTemplateList
-    : props.api.getList
-  apiFn(state.listQuery)
+  tableRef.value?.openLoading()
+  usePcTestCaseApi().getPcCaseList(state.listQuery)
     .then((res) => {
       state.listData = res.data.rows
       state.total = res.data.rowTotal
     })
-    .finally(() => {
-      tableRef.value.closeLoading()
-    })
+    .finally(() => tableRef.value?.closeLoading())
 }
 
-const toEdit = (row) => {
+const onOpenSaveOrUpdate = (row) => {
   const query = { editType: row ? 'update' : 'save' }
   if (row) query.id = row.id
   router.push({ name: props.editRouteName, query })
 }
 
-const openExecuteDialog = (row) => {
-  state.executeCaseIds = [row.id]
-  state.showExecuteDialog = true
+const onOpenRunConfigDialog = (row) => {
+  executeRef.value?.openDialog(row)
 }
 
-const onRunSuccess = (reportId) => {
-  emit('run-success', reportId)
+const onOpenReport = (reportId) => {
+  if (reportId) {
+    router.push({ name: 'pcAutoCaseReportDetail', query: { id: reportId } })
+  }
 }
 
 const deleted = (row) => {
@@ -159,10 +149,7 @@ const deleted = (row) => {
     cancelButtonText: '取消',
     type: 'warning',
   }).then(() => {
-    const apiFn = props.caseType === 'template'
-      ? props.api.deletedTemplate
-      : props.api.deleted
-    apiFn({ id: row.id }).then(() => {
+    usePcTestCaseApi().deleteCase({ id: row.id }).then(() => {
       ElMessage.success('删除成功')
       getList()
     })
@@ -171,6 +158,7 @@ const deleted = (row) => {
 
 onMounted(() => {
   getList()
+  getCasesModules()
 })
 
 defineExpose({ getList })

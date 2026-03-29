@@ -78,3 +78,9 @@ service.interceptors.response.use(
 
 // 导出 axios 实例
 export default service;
+
+export const post = (url, data, headers) =>
+  service({ url, method: 'POST', data, ...(headers ? { headers } : {}) })
+
+export const get = (url, params) =>
+  service({ url, method: 'GET', params })

@@ -12,20 +12,25 @@ export const operationTypeEnum = {
   mouse_right_click: 'MOUSE_RIGHT_CLICK',
   mouse_double_click: 'MOUSE_DOUBLE_CLICK',
   mouse_hover: 'MOUSE_HOVER',
-  mouse_drag: 'MOUSE_DRAG',
+  mouse_drag: 'MOUSE_DRAG_ELEMENT_TO_ELEMENT',
   mouse_scroll_wheel_down: 'MOUSE_SCROLL_WHEEL_DOWN',
   mouse_scroll_wheel_up: 'MOUSE_SCROLL_WHEEL_UP',
+  // 图中图模式 (PIP)
+  pip_switch_click: 'PIP_SWITCH_CLICK',
+  pip_drag: 'PIP_SLIDER_DRAG',
+  pip_timeline_drag: 'PIP_TIMELINE_DRAG',
+  pip_slider_drag: 'PIP_SLIDER_DRAG',
+  // 键盘操作
   keyboard_input: 'KEYBOARD_INPUT',
+  keyboard_combination_key: 'KEYBOARD_COMBINATION_KEY',
+  keyboard_single_key: 'KEYBOARD_SINGLE_KEY',
   keyboard_clear: 'KEYBOARD_CLEAR',
   keyboard_select_all: 'KEYBOARD_SELECT_ALL',
   keyboard_enter: 'KEYBOARD_ENTER',
-  keyboard_combination_key: 'KEYBOARD_COMBINATION_KEY',
+  // 流程控制
   flow_wait: 'FLOW_WAIT',
   flow_wait_element: 'FLOW_WAIT_ELEMENT',
   flow_case_template: 'FLOW_CASE_TEMPLATE',
-  pip_switch_click: 'PIP_SWITCH_CLICK',
-  pip_timeline_drag: 'PIP_TIMELINE_DRAG',
-  pip_slider_drag: 'PIP_SLIDER_DRAG',
 }
 
 // 操作码 -> 中文名称
@@ -34,20 +39,35 @@ export const operationTypeToZh = {
   MOUSE_RIGHT_CLICK: '右键点击',
   MOUSE_DOUBLE_CLICK: '双击',
   MOUSE_HOVER: '鼠标悬停',
-  MOUSE_DRAG: '鼠标拖拽',
+  MOUSE_DRAG_ELEMENT_TO_ELEMENT: '鼠标拖拽',
   MOUSE_SCROLL_WHEEL_DOWN: '滚轮向下',
   MOUSE_SCROLL_WHEEL_UP: '滚轮向上',
+  // 图中图模式 (PIP)
+  PIP_SWITCH_CLICK: 'PIP 开关点击',
+  PIP_DRAG: 'PIP 拖拽',
+  PIP_TIMELINE_DRAG: 'PIP 时间轴拖拽',
+  PIP_SLIDER_DRAG: 'PIP 滑块拖拽',
+  // 键盘操作
   KEYBOARD_INPUT: '文本输入',
+  KEYBOARD_COMBINATION_KEY: '组合键',
+  KEYBOARD_SINGLE_KEY: '单键',
   KEYBOARD_CLEAR: '清除文本',
   KEYBOARD_SELECT_ALL: '全选',
   KEYBOARD_ENTER: '回车',
-  KEYBOARD_COMBINATION_KEY: '组合键',
+  // 流程控制
   FLOW_WAIT: '等待',
   FLOW_WAIT_ELEMENT: '元素追踪',
   FLOW_CASE_TEMPLATE: '引用模板',
-  PIP_SWITCH_CLICK: 'PIP 开关点击',
-  PIP_TIMELINE_DRAG: 'PIP 时间轴拖拽',
-  PIP_SLIDER_DRAG: 'PIP 滑块拖拽',
+}
+
+/**
+ * 默认导出函数，返回 operationTypeToZh 和 operationTypeEnum
+ */
+export default function useMouseData() {
+  return {
+    operationTypeToZh,
+    operationTypeEnum,
+  }
 }
 
 /**
@@ -80,6 +100,7 @@ export const pcStepGroups = [
     ],
   },
   {
+    // 流程控制
     groupLabel: '流程控制',
     color: '#E6A23C',
     steps: [
@@ -89,6 +110,7 @@ export const pcStepGroups = [
     ],
   },
   {
+    // 图中图模式 (PIP)
     groupLabel: 'PIP 操作',
     color: '#F56C6C',
     steps: [
@@ -144,6 +166,7 @@ export const keyboardStepTypes = [
   'keyboard_select_all',
   'keyboard_enter',
   'keyboard_combination_key',
+  'keyboard_single_key',
 ]
 
 /**
@@ -176,11 +199,9 @@ export function createPcStepRequest(step_type) {
       image_url: '',
       threshold: 0.8,
       timeout: 10,
-      // mouse_drag 额外字段
       to_image_id: null,
       to_image_name: '',
       to_image_url: '',
-      // scroll
       scroll_times: 3,
     }
   }
@@ -193,7 +214,7 @@ export function createPcStepRequest(step_type) {
     return { ...base, key_combination: [] }
   }
 
-  if (['keyboard_clear', 'keyboard_select_all', 'keyboard_enter'].includes(step_type)) {
+  if (['keyboard_clear', 'keyboard_select_all', 'keyboard_enter', 'keyboard_single_key'].includes(step_type)) {
     return { ...base }
   }
 

@@ -1,42 +1,48 @@
 <template>
   <el-dialog
-      v-model="dialogVisible"
+      v-model="state.isShowDialog"
       title="选择执行机并运行"
       width="560px"
       append-to-body
       :close-on-click-modal="false"
       destroy-on-close
   >
-    <el-form label-width="90px" size="small">
+    <el-form label-width="100px" size="small">
+      <el-form-item label="用例">
+        <span>{{ state.case_title }}</span>
+      </el-form-item>
+
       <el-form-item label="执行机">
         <el-select
-            v-model="state.deviceId"
+            v-model="state.device_identity"
             placeholder="请选择在线执行机"
             filterable
             style="width: 100%"
         >
           <el-option
               v-for="device in state.deviceList"
-              :key="device.id"
-              :label="`${device.name}（${device.host || device.ip || ''}）`"
-              :value="device.id"
+              :key="device.identity"
+              :label="`${device.name || device.identity}（${device.host || device.ip || ''}）`"
+              :value="device.identity"
           />
         </el-select>
-        <el-button size="small" type="primary" link style="margin-top: 4px" @click="fetchDevices">
+        <el-button size="small" type="primary" link style="margin-top: 4px" @click="getDevices">
           刷新设备列表
         </el-button>
       </el-form-item>
     </el-form>
 
-    <el-empty v-if="state.deviceList.length === 0 && !state.loading" description="暂无在线执行机，请先启动 PC Agent"/>
+    <el-empty
+        v-if="state.deviceList.length === 0"
+        description="暂无在线执行机（5分钟内），请先启动 PC Agent"
+    />
 
     <template #footer>
-      <el-button @click="dialogVisible = false">取消</el-button>
+      <el-button @click="onCancel">取消</el-button>
       <el-button
           type="primary"
-          :loading="state.running"
-          :disabled="!state.deviceId"
-          @click="runCases"
+          :disabled="!state.device_identity"
+          @click="run"
       >
         运行
       </el-button>
@@ -45,75 +51,90 @@
 </template>
 
 <script setup name="PcCaseExecute">
-import { computed, reactive, onMounted } from 'vue'
+import { reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useRouter } from 'vue-router'
-import { usePcDevicesApi } from '/@/api/usePcAutoApi/pcDevices.js'
-import { usePcTestCaseApi } from '/@/api/usePcAutoApi/pcTestCase.js'
+import { useUserApi } from '/@/api/useSystemApi/user'
+import { usePcDevicesApi } from '/@/api/usePcAutoApi/pcDevices'
+import { usePcTestCaseApi } from '/@/api/usePcAutoApi/pcTestCase'
 
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    default: false,
-  },
-  // 要执行的用例 id 数组
-  caseIds: {
-    type: Array,
-    default: () => [],
-  },
-})
-
-const emit = defineEmits(['update:visible', 'run-success'])
-
-const router = useRouter()
-
-const dialogVisible = computed({
-  get: () => props.visible,
-  set: (val) => emit('update:visible', val),
-})
+const emit = defineEmits(['open-report'])
 
 const state = reactive({
+  isShowDialog: false,
+  case_id: null,
+  device_identity: '',
+  plan_id: null,
+  plan_name: '',
+  case_title: '',
+  created_by_name: '',
   deviceList: [],
-  deviceId: null,
-  loading: false,
-  running: false,
+  current_user: null,
+  filtersQuery: {
+    app_platform: '',
+    agent_id: '',
+  },
 })
 
-const fetchDevices = () => {
-  state.loading = true
-  usePcDevicesApi().getOnlineList({}).then((res) => {
-    state.deviceList = res.data || []
-    if (state.deviceList.length > 0 && !state.deviceId) {
-      state.deviceId = state.deviceList[0].id
+const openDialog = (row) => {
+  state.case_id = row?.id ?? null
+  state.case_title = row?.name ?? ''
+  state.plan_id = row?.plan_id ?? null
+  state.plan_name = row?.plan_name ?? ''
+  state.created_by_name = row?.created_by_name ?? ''
+  state.device_identity = ''
+  state.isShowDialog = true
+  getDevices()
+  getCurrentUser()
+}
+
+const closeDialog = () => {
+  state.isShowDialog = false
+}
+
+const onCancel = () => {
+  closeDialog()
+}
+
+const getDevices = () => {
+  const params = {
+    app_platform: state.filtersQuery.app_platform,
+    agent_id: state.filtersQuery.agent_id,
+    status: 1,
+    recent_minutes: 5,
+  }
+  usePcDevicesApi().getPcDevices(params).then((res) => {
+    const rows = res.data?.rows || res.data || []
+    state.deviceList = rows.map((d) => ({ ...d, status: 'online' }))
+    if (state.deviceList.length > 0 && !state.device_identity) {
+      state.device_identity = state.deviceList[0].identity
     }
-  }).finally(() => {
-    state.loading = false
   })
 }
 
-const runCases = () => {
-  if (!state.deviceId) {
+const getCurrentUser = () => {
+  useUserApi().getUserInfoByToken().then((res) => {
+    state.current_user = res.data
+  }).catch(() => {})
+}
+
+const run = () => {
+  runPcTestCases()
+}
+
+const runPcTestCases = () => {
+  if (!state.device_identity) {
     ElMessage.warning('请先选择执行机')
     return
   }
-  state.running = true
-  usePcTestCaseApi().runCases({
-    case_ids: props.caseIds,
-    device_id: state.deviceId,
+  usePcTestCaseApi().runPcCases({
+    case_id: state.case_id,
+    pc_device_identity: state.device_identity,
   }).then((res) => {
-    ElMessage.success('执行成功，正在跳转报告...')
-    const reportId = res.data?.report_id || res.data?.id
-    emit('run-success', reportId)
-    dialogVisible.value = false
-    if (reportId) {
-      router.push({ name: 'pcReportDetail', query: { id: reportId } })
-    }
-  }).finally(() => {
-    state.running = false
+    ElMessage.success('执行成功')
+    closeDialog()
+    emit('open-report', res.data?.report_id)
   })
 }
 
-onMounted(() => {
-  fetchDevices()
-})
+defineExpose({ openDialog })
 </script>

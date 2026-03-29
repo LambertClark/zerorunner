@@ -1,77 +1,162 @@
 <template>
   <div class="combination-key-controller">
-    <el-form label-width="90px" size="small">
-      <el-form-item label="组合键">
-        <div style="width: 100%">
-          <el-tag
-              v-for="(key, idx) in data.pc_request.key_combination"
-              :key="idx"
-              closable
-              style="margin: 0 4px 4px 0"
-              @close="removeKey(idx)"
-          >
-            {{ key }}
-          </el-tag>
-          <el-select
-              v-model="state.inputKey"
-              placeholder="添加按键"
-              filterable
-              style="width: 140px; margin-top: 4px"
-              @change="addKey"
-          >
-            <el-option v-for="k in commonKeys" :key="k" :label="k" :value="k"/>
-          </el-select>
-        </div>
-      </el-form-item>
+    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+      <!-- 已录入的键 -->
+      <el-tag
+          v-for="(key, idx) in data.request.keys"
+          :key="idx"
+          closable
+          @close="removeKey(idx)"
+      >{{ key }}</el-tag>
 
-      <el-form-item label="预览">
-        <el-text>{{ (data.pc_request.key_combination || []).join(' + ') || '-' }}</el-text>
-      </el-form-item>
-    </el-form>
+      <!-- 录制按钮 -->
+      <el-button
+          size="small"
+          :type="isListening ? 'danger' : 'primary'"
+          @click="isListening ? stopListening() : startListening()"
+      >
+        {{ capturePrompt }}
+      </el-button>
+
+      <!-- 清空 -->
+      <el-button
+          v-if="data.request.keys && data.request.keys.length"
+          size="small"
+          @click="clearAll"
+      >清空</el-button>
+
+      <!-- 组合键预览 -->
+      <span
+          v-if="data.request.keys && data.request.keys.length"
+          style="font-size: 13px; color: #409eff; margin-left: 4px;"
+      >
+        {{ data.request.keys.join(' + ') }}
+      </span>
+    </div>
   </div>
 </template>
 
-<script setup name="CombinationKeyController">
-import { reactive } from 'vue'
+<script setup name="keyboardController">
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import useVModel from '/@/utils/useVModel'
+import useMouseData from '/@/hooks/pcAutoTest/useMouseData.js'
 
 const props = defineProps({
-  data: {
-    type: Object,
-    default: () => ({}),
-  },
+  data: { type: Object, required: true },
 })
+const emit = defineEmits(['update:data'])
+const data = useVModel(props, 'data', emit)
 
-const state = reactive({
-  inputKey: '',
-})
+const { operationTypeEnum } = useMouseData()
 
-const commonKeys = [
-  'ctrl', 'alt', 'shift', 'win',
-  'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-  'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-  'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
-  'enter', 'esc', 'tab', 'backspace', 'delete', 'space',
-  'up', 'down', 'left', 'right',
-]
+const isListening = ref(false)
+const isMac = ref(navigator.platform.toUpperCase().includes('MAC'))
 
-const addKey = (key) => {
-  if (!key) return
-  if (!props.data.pc_request.key_combination) {
-    props.data.pc_request.key_combination = []
-  }
-  if (!props.data.pc_request.key_combination.includes(key)) {
-    props.data.pc_request.key_combination.push(key)
-  }
-  state.inputKey = ''
+const keyMap = {
+  Control: isMac.value ? '⌃' : 'CTRL',
+  Alt:     isMac.value ? '⌥' : 'ALT',
+  Shift:   isMac.value ? '⇧' : 'SHIFT',
+  Meta:    isMac.value ? '⌘' : 'WIN',
 }
 
-const removeKey = (idx) => {
-  props.data.pc_request.key_combination.splice(idx, 1)
+const specialKeys = new Set([
+  ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+  'Enter', 'Backspace', 'Escape', 'Tab', 'CapsLock', 'Shift',
+  'Delete', 'Home', 'End', 'PageUp', 'PageDown', 'Insert',
+])
+
+const specialKeyNames = {
+  ' ':          'Space',
+  'ArrowUp':    '↑',
+  'ArrowDown':  '↓',
+  'ArrowLeft':  '←',
+  'ArrowRight': '→',
+  'Enter':      'Enter',
+  'Backspace':  'Backspace',
+  'Escape':     'Escape',
+  'Tab':        'Tab',
+  'CapsLock':   'CapsLock',
+  'Delete':     'Delete',
+  'Home':       'Home',
+  'End':        'End',
+  'PageUp':     'PageUp',
+  'PageDown':   'PageDown',
+  'Insert':     'Insert',
 }
+
+function keyDisplay(keyValue) {
+  if (keyMap[keyValue]) return keyMap[keyValue]
+  if (specialKeyNames[keyValue]) return specialKeyNames[keyValue]
+  if (specialKeys.has(keyValue)) return keyValue
+  return keyValue.length === 1 ? keyValue.toUpperCase() : keyValue
+}
+
+function logStep(msg) {
+  console.log('[CombinationKey]', msg)
+}
+
+function startListening() {
+  if (!data.value.request.keys) {
+    data.value.request.keys = []
+  }
+  isListening.value = true
+  logStep('开始录制按键')
+}
+
+function stopListening() {
+  isListening.value = false
+  logStep('停止录制按键')
+}
+
+function handleKeyDown(event) {
+  if (!isListening.value) return
+  if (event.repeat) return
+  event.preventDefault()
+
+  // ESC 停止录制
+  if (event.key === 'Escape') {
+    stopListening()
+    return
+  }
+
+  const keys = data.value.request.keys || []
+  if (keys.length >= 3) return
+
+  const display = keyDisplay(event.key)
+  if (!keys.includes(display)) {
+    data.value.request.keys = [...keys, display]
+    logStep(`录入按键: ${display}`)
+  }
+
+  if ((data.value.request.keys || []).length >= 3) {
+    stopListening()
+  }
+}
+
+function removeKey(idx) {
+  const keys = [...(data.value.request.keys || [])]
+  keys.splice(idx, 1)
+  data.value.request.keys = keys
+}
+
+function clearAll() {
+  data.value.request.keys = []
+  isListening.value = false
+}
+
+const capturePrompt = computed(() => {
+  const keys = data.value.request.keys || []
+  if (isListening.value && keys.length < 3) return `录入${keys.length}个按键...`
+  if (keys.length >= 3) return '已达最大记录数（3键）'
+  return '录入快捷键'
+})
+
+onMounted(() => window.addEventListener('keydown', handleKeyDown))
+onBeforeUnmount(() => window.removeEventListener('keydown', handleKeyDown))
 </script>
 
 <style lang="scss" scoped>
 .combination-key-controller {
-  padding: 0 4px;
+  padding: 4px 0;
 }
 </style>

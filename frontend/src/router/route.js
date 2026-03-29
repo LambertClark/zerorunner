@@ -141,10 +141,10 @@ export const dynamicRoutes = [
 					},
 					{
 						path: '/pcAutoTest/pcReport/detail',
-						name: 'pcReportDetail',
+						name: 'pcAutoCaseReportDetail',
 						component: () => import('/@/views/pcAutoTest/pcReport/pcReportDetail.vue'),
 						meta: {
-							title: 'PC 报告详情',
+							title: 'PC用例报告详情',
 							isLink: '',
 							isHide: true,
 							isKeepAlive: false,
@@ -221,7 +221,7 @@ export const dynamicRoutes = [
 						meta: {
 							title: '素材列表',
 							isLink: '',
-							isHide: false,
+							isHide: true, 
 							isKeepAlive: true,
 							isAffix: false,
 							isIframe: false,

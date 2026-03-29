@@ -186,6 +186,30 @@ export const stepTypeList = [
 			background: "#AE445A",
 		}
 	},
+	// PC 自动化 - 鼠标操作
+	{ label: "左键点击", value: "mouse_left_click", color: "#409EFF", background: "#ECF5FF", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#409EFF", background: "#ECF5FF" } },
+	{ label: "右键点击", value: "mouse_right_click", color: "#409EFF", background: "#ECF5FF", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#409EFF", background: "#ECF5FF" } },
+	{ label: "双击", value: "mouse_double_click", color: "#409EFF", background: "#ECF5FF", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#409EFF", background: "#ECF5FF" } },
+	{ label: "鼠标悬停", value: "mouse_hover", color: "#409EFF", background: "#ECF5FF", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#409EFF", background: "#ECF5FF" } },
+	{ label: "鼠标拖拽", value: "mouse_drag", color: "#409EFF", background: "#ECF5FF", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#409EFF", background: "#ECF5FF" } },
+	{ label: "滚轮向下", value: "mouse_scroll_wheel_down", color: "#409EFF", background: "#ECF5FF", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#409EFF", background: "#ECF5FF" } },
+	{ label: "滚轮向上", value: "mouse_scroll_wheel_up", color: "#409EFF", background: "#ECF5FF", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#409EFF", background: "#ECF5FF" } },
+	// PC 自动化 - 键盘操作
+	{ label: "文本输入", value: "keyboard_input", color: "#67C23A", background: "#F0F9EB", icon: h('i', { class: 'iconfont icon-keyboard' }), style: { color: "#67C23A", background: "#F0F9EB" } },
+	{ label: "组合键", value: "keyboard_combination_key", color: "#67C23A", background: "#F0F9EB", icon: h('i', { class: 'iconfont icon-keyboard' }), style: { color: "#67C23A", background: "#F0F9EB" } },
+	{ label: "单键", value: "keyboard_single_key", color: "#67C23A", background: "#F0F9EB", icon: h('i', { class: 'iconfont icon-keyboard' }), style: { color: "#67C23A", background: "#F0F9EB" } },
+	{ label: "清空", value: "keyboard_clear", color: "#67C23A", background: "#F0F9EB", icon: h('i', { class: 'iconfont icon-keyboard' }), style: { color: "#67C23A", background: "#F0F9EB" } },
+	{ label: "全选", value: "keyboard_select_all", color: "#67C23A", background: "#F0F9EB", icon: h('i', { class: 'iconfont icon-keyboard' }), style: { color: "#67C23A", background: "#F0F9EB" } },
+	{ label: "回车", value: "keyboard_enter", color: "#67C23A", background: "#F0F9EB", icon: h('i', { class: 'iconfont icon-keyboard' }), style: { color: "#67C23A", background: "#F0F9EB" } },
+	// PC 自动化 - 流程控制
+	{ label: "等待", value: "flow_wait", color: "#E6A23C", background: "#FDF6EC", icon: h('i', { class: 'iconfont icon-time' }), style: { color: "#E6A23C", background: "#FDF6EC" } },
+	{ label: "元素追踪", value: "flow_wait_element", color: "#E6A23C", background: "#FDF6EC", icon: h('i', { class: 'iconfont icon-time' }), style: { color: "#E6A23C", background: "#FDF6EC" } },
+	{ label: "引用模板", value: "flow_case_template", color: "#F56C6C", background: "#FEF0F0", icon: h('i', { class: 'iconfont icon-a-case-o1' }), style: { color: "#F56C6C", background: "#FEF0F0" } },
+	// PC 自动化 - PIP 操作
+	{ label: "PIP 开关点击", value: "pip_switch_click", color: "#909399", background: "#F4F4F5", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#909399", background: "#F4F4F5" } },
+	{ label: "PIP 拖拽", value: "pip_drag", color: "#909399", background: "#F4F4F5", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#909399", background: "#F4F4F5" } },
+	{ label: "PIP 时间轴拖拽", value: "pip_timeline_drag", color: "#909399", background: "#F4F4F5", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#909399", background: "#F4F4F5" } },
+	{ label: "PIP 滑块拖拽", value: "pip_slider_drag", color: "#909399", background: "#F4F4F5", icon: h('i', { class: 'iconfont icon-mouse' }), style: { color: "#909399", background: "#F4F4F5" } },
 ]
 
 
