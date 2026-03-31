@@ -54,13 +54,13 @@ const state = reactive({
   columns: [
     { label: '序号', columnType: 'index', width: 'auto', align: 'center' },
     {
-      key: 'name', label: '用例名称', width: '',
+      key: 'title', label: '用例名称', width: '',
       render: ({ row }) => h(ElButton, {
         link: true, type: 'primary',
         onClick: () => onOpenSaveOrUpdate(row),
-      }, () => row.name),
+      }, () => row.title),
     },
-    { key: 'remarks', label: '备注', width: '', align: 'center' },
+    { key: 'desc', label: '备注', width: '', align: 'center' },
     { key: 'updation_date', label: '更新时间', width: '150', align: 'center' },
     { key: 'updated_by_name', label: '更新人', width: '', align: 'center' },
     { key: 'creation_date', label: '创建时间', width: '150', align: 'center' },

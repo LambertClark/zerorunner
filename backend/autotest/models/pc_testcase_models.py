@@ -89,8 +89,6 @@ class PcCase(Base):
     @classmethod
     async def create_or_update(cls, params: dict) -> dict:
         params = {key: value for key, value in params.items() if hasattr(cls, key)}
-        step_data = params.get("step_data")
-        print(step_data)
         params = await cls.handle_params(params)
         id = params.get("id", None)
         if id:

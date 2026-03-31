@@ -15,6 +15,21 @@ IMAGE_FIELDS = ("image", "dragImage", "referenceImage", "targetImage", "trackIma
 CHILD_KEYS = ("children", "children_steps", "sub_steps")
 
 
+def _parse_ip_list(raw: str) -> typing.List[str]:
+    """解析 ipv4_addresses 字段，兼容逗号分隔串和 JSON 数组字符串两种格式"""
+    raw = (raw or "").strip()
+    if not raw:
+        return []
+    if raw.startswith("["):
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, list):
+                return [str(ip).strip() for ip in parsed if str(ip).strip()]
+        except Exception:
+            pass
+    return [ip.strip() for ip in raw.split(",") if ip.strip()]
+
+
 def get_step_data_tree(step_data: typing.List[dict]) -> typing.List[str]:
     """递归扫描步骤树，提取 IMAGE_FIELDS 中的 URL，去重后返回"""
     urls: typing.Set[str] = set()
@@ -124,7 +139,10 @@ class PcTestcaseService:
         if not pc_device_info:
             raise ParameterError(f"设备 [{params.pc_device_identity}] 不存在")
 
-        ip_list = [ip.strip() for ip in (pc_device_info.ipv4_addresses or "").split(",") if ip.strip()]
+        ip_list = _parse_ip_list(pc_device_info.ipv4_addresses or "")
+        if not ip_list:
+            raise ParameterError(f"设备 [{params.pc_device_identity}] 的 ipv4_addresses 为空，无法执行")
+
         base_url_template = "http://{}:8080"
         ping = "/api/v1/ping"
         run = "/api/v1/pc_ui_case/execute"
@@ -140,15 +158,15 @@ class PcTestcaseService:
                 if resp.status_code != 200:
                     continue
             except Exception as e:
-                print(f"ping {ping_url} failed: {e}")
+                logger.warning(f"ping {ping_url} failed: {e}")
                 continue
 
-            # 创建报告
+            # 创建报告（status=2 表示执行中）
             report = await UiReportService.save_report_info(
                 UiReportSaveSchema(
                     name=params.report_name,
                     case_id=params.case_id,
-                    status="EXECUTE",
+                    status=2,
                 )
             )
 
@@ -166,7 +184,7 @@ class PcTestcaseService:
             try:
                 requests.post(run_url, json=data, timeout=30)
             except Exception as e:
-                print(f"run {run_url} failed: {e}")
+                logger.warning(f"run {run_url} failed: {e}")
 
             return {"report_id": report["id"]}
 

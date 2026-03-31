@@ -79,3 +79,13 @@ class PcPictureIn(BaseSchema):
 class PcPictureId(BaseSchema):
     """素材ID（兼容旧名）"""
     id: int = Field(..., description="素材ID")
+
+
+class PictureByTreeIdIn(BaseSchema):
+    """按树节点ID查询素材入参"""
+    tree_id: int = Field(..., description="树节点ID")
+
+
+class PictureByNameIn(BaseSchema):
+    """按名称查询素材入参"""
+    picture_name: str = Field(..., description="素材名称")

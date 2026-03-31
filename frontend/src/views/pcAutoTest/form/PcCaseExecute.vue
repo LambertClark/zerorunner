@@ -77,7 +77,7 @@ const state = reactive({
 
 const openDialog = (row) => {
   state.case_id = row?.id ?? null
-  state.case_title = row?.name ?? ''
+  state.case_title = row?.title ?? row?.name ?? ''
   state.plan_id = row?.plan_id ?? null
   state.plan_name = row?.plan_name ?? ''
   state.created_by_name = row?.created_by_name ?? ''
@@ -130,9 +130,18 @@ const runPcTestCases = () => {
     case_id: state.case_id,
     pc_device_identity: state.device_identity,
   }).then((res) => {
+    const reportId = res.data?.report_id
+    if (!reportId) {
+      ElMessage.warning('执行请求已发出，但未返回报告ID，请稍后在报告列表查看结果')
+      closeDialog()
+      return
+    }
     ElMessage.success('执行成功')
     closeDialog()
-    emit('open-report', res.data?.report_id)
+    emit('open-report', reportId)
+  }).catch((err) => {
+    const msg = err?.response?.data?.msg || err?.message || '执行失败，请检查执行机是否在线'
+    ElMessage.error(msg)
   })
 }
 

@@ -8,6 +8,7 @@ from loguru import logger
 from autotest.exceptions.exceptions import RootNodeNameExistsError
 from autotest.schemas.pc_autotest.pc_picture_tag_tree_schemas import (
     PictureTreeIn, PictureIn, PictureDeleteIn, PictureId, PcPictureQuery,
+    PictureByTreeIdIn, PictureByNameIn,
 )
 from autotest.services.pc_autotest.pc_picture_service import PcPictureService
 from autotest.utils.response.codes import CodeEnum
@@ -61,18 +62,18 @@ async def delete_picture(params: PictureDeleteIn):
 @router.post('/list', description="获取素材列表")
 async def picture_list(params: PcPictureQuery):
     data = await PcPictureService.get_list(params)
-    return partner_success({"rows": data, "rowTotal": len(data) if isinstance(data, list) else 0})
-
-
-@router.get('/pictureByTreeId', description="按标签树节点获取素材")
-async def get_picture_by_tree_id(tree_id: int):
-    data = await PcPictureService.get_picture_by_tree_id(tree_id)
     return partner_success(data)
 
 
-@router.get('/pictureByName', description="按名称获取素材")
-async def get_picture_by_name(picture_name: str):
-    if not picture_name:
+@router.post('/pictureByTreeId', description="按标签树节点获取素材")
+async def get_picture_by_tree_id(params: PictureByTreeIdIn):
+    data = await PcPictureService.get_picture_by_tree_id(params.tree_id)
+    return partner_success(data)
+
+
+@router.post('/pictureByName', description="按名称获取素材")
+async def get_picture_by_name(params: PictureByNameIn):
+    if not params.picture_name:
         return partner_success(None)
-    data = await PcPictureService.get_picture_by_name(picture_name)
+    data = await PcPictureService.get_picture_by_name(params.picture_name)
     return partner_success(data)

@@ -58,11 +58,11 @@ const state = reactive({
   columns: [
     { label: '序号', columnType: 'index', align: 'center', width: 'auto' },
     {
-      key: 'file_path', label: '素材图片', align: 'center', width: '120',
+      key: 'image_url', label: '素材图片', align: 'center', width: '120',
       render: ({ row }) => h(ElImage, {
-        src: getPicUrl(row.file_path || row.url),
+        src: getPicUrl(row.image_url),
         fit: 'contain',
-        previewSrcList: [getPicUrl(row.file_path || row.url)],
+        previewSrcList: [getPicUrl(row.image_url)],
         previewTeleported: true,
         style: { width: '80px', height: '55px' },
       }),
@@ -89,7 +89,7 @@ const search = () => {
 
 const getList = () => {
   tableRef.value.openLoading()
-  pictureApi.getPictureList(state.listQuery)
+  pictureApi.getList(state.listQuery)
     .then((res) => {
       state.listData = res.data.rows
       state.total = res.data.rowTotal
@@ -115,7 +115,7 @@ const deleted = (row) => {
   ElMessageBox.confirm('是否删除该素材?', '提示', {
     confirmButtonText: '确认', cancelButtonText: '取消', type: 'warning',
   }).then(() => {
-    pictureApi.deleted({ id: row.id }).then(() => {
+    pictureApi.deletePicture({ id: row.id }).then(() => {
       ElMessage.success('删除成功')
       getList()
     })
