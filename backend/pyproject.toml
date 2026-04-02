@@ -45,8 +45,6 @@ dependencies = [
     "uvicorn==0.20.0",
     "websockets==11.0.3",
     "win32-setctime==1.1.0",
+    "cryptography",
 ]
 
-[[tool.uv.index]]
-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
-default = true

@@ -94,6 +94,21 @@
                 </el-link>
               </el-form-item>
 
+              <el-form-item label="用例分类：" prop="case_category">
+                <el-select
+                    v-model="state.form.case_category"
+                    placeholder="选择用例分类"
+                    style="width: 100%"
+                >
+                  <el-option
+                      v-for="opt in caseCategoryOptions"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                  />
+                </el-select>
+              </el-form-item>
+
               <el-form-item label="步骤总数：">
                 <span>{{ state.form.step_data?.length ?? 0 }}</span>
               </el-form-item>
@@ -177,6 +192,12 @@ import { useProjectApi } from '/@/api/useAutoApi/project'
 import { handleEmpty } from '/@/utils/other'
 import { getStepTypeInfo, getStepTypesByUse } from '/@/utils/case'
 
+const caseCategoryOptions = [
+  { value: 'release', label: '发版用例' },
+  { value: 'sit', label: 'SIT用例' },
+  { value: 'performance', label: '性能用例' },
+]
+
 const props = defineProps({
   pageTitle: {
     type: String,
@@ -212,6 +233,7 @@ const state = reactive({
   rules: {
     name: [{ required: true, message: '请输入用例名称', trigger: 'blur' }],
     project_id: [{ required: true, message: '请选择所属项目', trigger: 'blur' }],
+    case_category: [{ required: true, message: '请选择用例分类', trigger: 'change' }],
   },
   projectList: [],
   envList: [],
@@ -304,6 +326,10 @@ const getProjectList = async () => {
 const saveCase = async () => {
   if (!state.form.project_id) {
     ElMessage.warning('请选择所属项目！')
+    return
+  }
+  if (!state.form.case_category) {
+    ElMessage.warning('请选择用例分类！')
     return
   }
   state.form.variables = handleEmpty(state.form.variables)

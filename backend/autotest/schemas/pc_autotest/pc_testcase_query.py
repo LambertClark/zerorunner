@@ -25,5 +25,7 @@ class PcCaseQuery(BaseSchema):
     run_user_name: typing.Optional[str] = Field(None, description="执行用户名")
     created_by: typing.Optional[int] = Field(None, description="创建人ID")
     created_by_name: typing.Optional[str] = Field(None, description="创建人名称")
+    case_category: typing.Optional[str] = Field(None, description="用例分类")
+    is_template: typing.Optional[int] = Field(None, description="是否模板")
     page: int = Field(1, description="页码")
     pageSize: int = Field(20, description="每页数量")

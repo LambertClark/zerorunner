@@ -9,6 +9,19 @@
             clearable
             @keyup.enter="search"
         />
+        <el-select
+            v-model="state.listQuery.case_category"
+            placeholder="选择用例分类"
+            clearable
+            style="max-width: 160px; margin-left: 10px"
+        >
+          <el-option
+              v-for="opt in caseCategoryOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+          />
+        </el-select>
         <el-button type="primary" class="ml10" @click="search">查询</el-button>
         <el-button type="success" class="ml10" @click="onOpenSaveOrUpdate(null)">新增</el-button>
       </div>
@@ -30,14 +43,31 @@
 
 <script setup name="pcAutoCase">
 import { h, onMounted, reactive, ref } from 'vue'
-import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
+import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { usePcTestCaseApi } from '/@/api/usePcAutoApi/pcTestCase'
 import PcCaseExecute from '/@/views/pcAutoTest/form/PcCaseExecute.vue'
+import { useUserInfo } from '/@/stores/userInfo'
+
+const caseCategoryOptions = [
+  { value: 'release', label: '发版用例' },
+  { value: 'sit', label: 'SIT用例' },
+  { value: 'performance', label: '性能用例' },
+]
+
+const caseCategoryMap = {
+  release: '发版用例',
+  sit: 'SIT用例',
+  performance: '性能用例',
+}
+
+const formatCaseCategory = (val) => caseCategoryMap[val] || val
 
 const tableRef = ref()
 const executeRef = ref()
 const router = useRouter()
+const { userInfos } = storeToRefs(useUserInfo())
 
 const state = reactive({
   listData: [],
@@ -50,6 +80,7 @@ const state = reactive({
     created_by: '',
     prioritys: [],
     module: null,
+    case_category: '',
   },
   columns: [
     { label: '序号', columnType: 'index', width: 'auto', align: 'center' },
@@ -59,6 +90,10 @@ const state = reactive({
         link: true, type: 'primary',
         onClick: () => onOpenSaveOrUpdate(row),
       }, () => row.title),
+    },
+    {
+      key: 'case_category', label: '用例分类', width: '100', align: 'center',
+      render: ({ row }) => h(ElTag, { size: 'small' }, () => formatCaseCategory(row.case_category)),
     },
     { key: 'desc', label: '备注', width: '', align: 'center' },
     { key: 'updation_date', label: '更新时间', width: '150', align: 'center' },
@@ -70,11 +105,17 @@ const state = reactive({
       render: ({ row }) => h('div', null, [
         h(ElButton, { type: 'primary', onClick: () => onOpenRunConfigDialog(row) }, () => '运行'),
         h(ElButton, { type: 'warning', onClick: () => onOpenSaveOrUpdate(row) }, () => '编辑'),
-        h(ElButton, { type: 'danger', onClick: () => deleted(row) }, () => '删除'),
+        h(ElButton, {
+          type: 'danger',
+          disabled: !canDeleteCase(row),
+          onClick: () => deleted(row),
+        }, () => '删除'),
       ]),
     },
   ],
 })
+
+const canDeleteCase = (row) => row.created_by === userInfos.value?.id
 
 const search = () => {
   state.listQuery.page = 1
@@ -93,7 +134,11 @@ const getList = () => {
 
 const onOpenSaveOrUpdate = (row) => {
   const query = { editType: row ? 'update' : 'save' }
-  if (row) query.id = row.id
+  if (row) {
+    query.id = row.id
+  } else {
+    query.timestamp = new Date().getTime()
+  }
   router.push({ name: 'editPcAutoCase', query })
 }
 
@@ -108,6 +153,10 @@ const onOpenReport = (reportId) => {
 }
 
 const deleted = (row) => {
+  if (!canDeleteCase(row)) {
+    ElMessage.warning('仅允许用例创建人删除')
+    return
+  }
   ElMessageBox.confirm('是否删除该条数据, 是否继续?', '提示', {
     confirmButtonText: '确认',
     cancelButtonText: '取消',

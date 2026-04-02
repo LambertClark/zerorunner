@@ -25,6 +25,7 @@ class PcCase(Base):
     platforms = mapped_column(JSON, comment='平台')
     project_id = mapped_column(Integer, comment='项目ID')
     module_id = mapped_column(Integer, comment='模块ID')
+    case_category = mapped_column(String(32), nullable=False, comment='用例分类')
 
     @classmethod
     async def get_list(cls, params: PcCaseQuery, order_by: str = "desc"):
@@ -47,6 +48,8 @@ class PcCase(Base):
             q.append(cls.created_by == params.created_by)
         if params.created_by_name:
             q.append(User.nickname.like(f'%{params.created_by_name}%'))
+        if params.case_category:
+            q.append(cls.case_category == params.case_category)
 
         u = aliased(User)
         stmt = (

@@ -5,11 +5,14 @@ import typing
 import requests
 from loguru import logger
 
-from autotest.exceptions.exceptions import ParameterError
+from autotest.exceptions.exceptions import ParameterError, PermissionNotEnough
 from autotest.models.pc_picture_models import PcPictureBinding as PictureInfo
 from autotest.models.pc_testcase_models import PcCase
 from autotest.schemas.pc_autotest.pc_case import PcCaseQuery, PcCaseIn, PcCaseId, PcRunCaseRequest
 from autotest.services.api.module import ModuleService
+from autotest.utils.current_user import current_user
+
+VALID_CASE_CATEGORIES = {"release", "sit", "performance"}
 
 IMAGE_FIELDS = ("image", "dragImage", "referenceImage", "targetImage", "trackImage", "parentImage")
 CHILD_KEYS = ("children", "children_steps", "sub_steps")
@@ -55,6 +58,10 @@ class PcTestcaseService:
 
     @staticmethod
     async def save_or_update(params: PcCaseIn) -> dict:
+        if not params.case_category:
+            raise ParameterError("用例分类不能为空！")
+        if params.case_category not in VALID_CASE_CATEGORIES:
+            raise ParameterError("用例分类不合法！")
         result = await PcCase.create_or_update(params.dict())
         case_id = result.get("id")
         image_urls = get_step_data_tree(params.step_data or [])
@@ -72,6 +79,11 @@ class PcTestcaseService:
 
     @staticmethod
     async def delete(id: int):
+        case_info = await PcCase.get(id, to_dict=True)
+        if case_info:
+            user_info = await current_user()
+            if case_info.get("created_by") != user_info.get("id"):
+                raise PermissionNotEnough()
         await PictureInfo.clear_case_bindings(id)
         from autotest.services.pc_autotest.pc_report_service import UiReportService
         await UiReportService.cleanup_by_case_id(id)

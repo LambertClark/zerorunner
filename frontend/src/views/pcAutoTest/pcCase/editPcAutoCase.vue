@@ -23,6 +23,7 @@ const createForm = () => ({
   variables: [],
   headers: [],
   is_template: 0,
+  case_category: '',
 })
 
 const leftComponents = [
