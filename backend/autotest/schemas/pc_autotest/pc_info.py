@@ -22,7 +22,7 @@ class PcDeviceIn(BaseSchema):
     name: str = Field(..., description="设备名称")
     identity: str = Field(..., description="设备标识(唯一)")
     ipv4_addresses: typing.Optional[str] = Field(None, description="IP地址列表，逗号分隔")
-    port: int = Field(8088, description="Agent端口")
+    port: int = Field(8080, description="Agent端口")
     remarks: typing.Optional[str] = Field(None, description="备注")
     enabled_flag: int = Field(1, description="是否启用")
 

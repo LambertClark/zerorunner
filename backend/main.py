@@ -7,6 +7,7 @@ import uvicorn
 from fastapi import FastAPI, Depends
 
 from autotest.db.my_redis import redis_pool
+from autotest.models import init_db
 from autotest.init.cors import init_cors
 from autotest.init.dependencies import login_verification
 from autotest.init.exception import init_exception
@@ -23,6 +24,8 @@ async def start_app(app: FastAPI):
     init_logger()
     logger.info("日志初始化成功！！!")  # 初始化日志
     redis_pool.init_by_config(config=config)
+    await init_db()
+    logger.info("数据库初始化成功！！!")
     yield
 
     await redis_pool.redis.close()

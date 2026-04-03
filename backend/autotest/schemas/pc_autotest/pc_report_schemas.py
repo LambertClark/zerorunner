@@ -29,7 +29,7 @@ class UiReportSaveSchema(BaseSchema):
     id: typing.Optional[int] = Field(None, description="报告ID")
     name: typing.Optional[str] = Field(None, description="报告名称")
     start_time: typing.Optional[str] = Field(None, description="开始时间")
-    duration: typing.Optional[int] = Field(None, description="耗时(ms)")
+    duration: typing.Optional[float] = Field(None, description="耗时（秒）")
     case_id: typing.Optional[int] = Field(None, description="用例ID")
     run_mode: typing.Optional[str] = Field(None, description="运行模式")
     success: typing.Optional[bool] = Field(None, description="是否成功")
@@ -70,7 +70,7 @@ class UiReportDetailQuery(BaseSchema):
 
 class SikuliXOperationResultDTO(BaseSchema):
     """Agent 回传步骤结果 DTO"""
-    operation_state: typing.Optional[str] = Field(None, description="操作状态")
+    operation_state: typing.Optional[bool] = Field(None, description="操作状态（是否成功）")
     operation_type: typing.Optional[str] = Field(None, description="操作类型")
     expect_value: typing.Optional[str] = Field(None, description="预期值")
     actual_value: typing.Optional[str] = Field(None, description="实际值")
@@ -84,7 +84,7 @@ class SikuliXOperationResultDTO(BaseSchema):
     report_id: typing.Optional[int] = Field(None, description="报告ID")
     report_name: typing.Optional[str] = Field(None, description="报告名称")
     original_image_path: typing.Optional[str] = Field(None, description="原始截图路径")
-    duration: typing.Optional[int] = Field(None, description="耗时(ms)")
+    duration: typing.Optional[float] = Field(None, description="耗时（秒）")
     is_lase_step: typing.Optional[bool] = Field(False, description="是否最后一步")
     is_template: typing.Optional[bool] = Field(False, description="是否模板步骤")
 

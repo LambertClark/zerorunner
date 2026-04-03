@@ -155,7 +155,8 @@ class PcTestcaseService:
         if not ip_list:
             raise ParameterError(f"设备 [{params.pc_device_identity}] 的 ipv4_addresses 为空，无法执行")
 
-        base_url_template = "http://{}:8080"
+        device_port = getattr(pc_device_info, "port", None) or 8080
+        base_url_template = f"http://{{}}:{device_port}"
         ping = "/api/v1/ping"
         run = "/api/v1/pc_ui_case/execute"
 

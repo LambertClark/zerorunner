@@ -139,7 +139,13 @@ const onOpenSaveOrUpdate = (row) => {
   } else {
     query.timestamp = new Date().getTime()
   }
-  router.push({ name: 'editPcAutoCase', query })
+  if (!router.hasRoute('editPcAutoCase')) {
+    ElMessage.warning('未配置编辑页面路由，请在菜单管理新增隐藏菜单：/pcAutoTest/pcCase/edit')
+    return
+  }
+  router.push({ name: 'editPcAutoCase', query }).catch(() => {
+    ElMessage.warning('编辑页面路由不可用，请检查菜单路由名称和路径配置')
+  })
 }
 
 const onOpenRunConfigDialog = (row) => {

@@ -8,13 +8,14 @@ from fastapi import UploadFile, HTTPException
 
 from config import config
 
-_ALLOWED_MIME_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
+_ALLOWED_MIME_TYPES = {'image/jpeg', 'image/png', 'image/webp', 'application/octet-stream'}
 _MAX_SIZE = 5 * 1024 * 1024
 
 _MIME_TO_EXT = {
     'image/jpeg': 'jpg',
     'image/png': 'png',
     'image/webp': 'webp',
+    'application/octet-stream': 'png',
 }
 
 

@@ -167,11 +167,15 @@ class UiReportService:
             all_details = await DetailModel.get_list(detail_params)
             items = all_details.get("items", []) if isinstance(all_details, dict) else (all_details or [])
             total_duration = sum((item.get("duration") or 0) for item in items)
-            is_all_success = all(item.get("operation_state") is not False for item in items)
+            # 优先用 success 字段判断，success 为 None 时回退到 operation_state（均为 bool）
+            is_all_success = all(
+                bool(item.get("success") if item.get("success") is not None else item.get("operation_state", False))
+                for item in items
+            )
             await UiReports.create_or_update({
                 "id": report_id,
                 "success": is_all_success,
-                "status": "FINISH",
+                "status": 1 if is_all_success else 0,
                 "duration": total_duration,
             })
 

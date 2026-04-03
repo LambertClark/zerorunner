@@ -19,7 +19,7 @@ class MyAPIKeyHeader(APIKeyHeader):
     async def __call__(self, request: Request):
         g.request = request
         path: str = request.get('path')
-        if path in config.WHITE_ROUTER:
+        if any(path == w or path.startswith(w) for w in config.WHITE_ROUTER):
             return
         token: str = request.headers.get("token")
         if not token:

@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(xargs grep:*)",
-      "Bash(find G:zerorunner/backend/autotest/models -name pc_* -type f)"
+      "Bash(find G:zerorunner/backend/autotest/models -name pc_* -type f)",
+      "Bash(grep -n \"INSERT INTO \\\\`menu\\\\`\" \"G:/zerorunner/backend/db_script/zerorunner.sql\")",
+      "Bash(grep:*)"
     ]
   }
 }

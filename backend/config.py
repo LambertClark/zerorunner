@@ -32,7 +32,15 @@ class Configs(BaseSettings):
     STATIC_DIR: str = 'static'  # 静态文件目录
     GLOBAL_ENCODING: str = 'utf8'  # 全局编码
     CORS_ORIGINS: typing.List[typing.Any] = ["*"]  # 跨域请求
-    WHITE_ROUTER: list = ["/api/user/login", "/api/file"]  # 路由白名单，不需要鉴权
+    WHITE_ROUTER: list = [
+        "/api/user/login",
+        "/api/file",
+        # PC Agent 回调链路白名单（无需用户 token）
+        "/api/pc/devices/updatePcDevice",
+        "/api/pc/report/saveReportStepDetail",
+        "/api/pc/fm/upload-photo",
+        "/api/pc/fm/download/",
+    ]  # 路由白名单，不需要鉴权
 
     SECRET_KEY: str = "kPBDjVk0o3Y1wLxdODxBpjwEjo7-Euegg4kdnzFIRjc"  # 密钥(每次重启服务密钥都会改变, token解密失败导致过期, 可设置为常量)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 1  # token过期时间: 60 minutes * 24 hours * 1 days = 1 days

@@ -42,7 +42,7 @@ const onOpenStepInfoPage = (data) => {
   state.openApiInfoPage = !state.openApiInfoPage
 }
 const handelStepData = (done) => {
-  if (isView) {
+  if (isView.value) {
     const stepData = stepInfoRef.value.getStepData()
     emit('updateStepData', stepData)
     console.log('1111', stepInfoRef.value.getStepData())
